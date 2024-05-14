@@ -1,0 +1,22 @@
+[project]
+name = "dom-tokenizers"
+version = "0.0.1"
+dependencies = [
+    "python-magic",
+    "tokenizers",
+    "transformers",
+]
+
+[project.optional-dependencies]
+dev = [
+    "datasets",
+    "flake8",
+    "pillow",
+]
+
+[project.scripts]
+train-tokenizer = "dom_tokenizers.train:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
