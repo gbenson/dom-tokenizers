@@ -1,16 +1,40 @@
 [project]
 name = "dom-tokenizers"
 version = "0.0.1"
+authors = [{ name = "Gary Benson" }]
+description = "HTML DOM-aware tokenizers for Hugging Face language models"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"  # match..case
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Text Processing :: Markup :: HTML",
+]
 dependencies = [
     "python-magic",
     "tokenizers",
     "transformers",
 ]
 
+[project.urls]
+Homepage = "https://github.com/gbenson/dom-tokenizers"
+Repository = "https://github.com/gbenson/dom-tokenizers"
+"Bug Tracker" = "https://github.com/gbenson/dom-tokenizers/issues"
+
 [project.optional-dependencies]
 dev = [
-    "datasets",
+    "build",
     "flake8",
+]
+train = [
+    "datasets",
     "pillow",
 ]
 
