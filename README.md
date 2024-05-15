@@ -1,8 +1,25 @@
+<p style="float: right">
+    <a href="https://badge.fury.io/py/dom-tokenizers">
+         <img alt="Build" src="https://badge.fury.io/py/dom-tokenizers.svg">
+    </a>
+    <a href="https://github.com/gbenson/dom-tokenizers/blob/master/LICENSE">
+        <img alt="GitHub" src="https://img.shields.io/github/license/gbenson/dom-tokenizers.svg?color=blue">
+    </a>
+</p>
+
 # DOM tokenizers
 
-HTML DOM-aware tokenizers for Hugging Face language models.
+DOM-aware tokenizers for [🤗 Hugging Face](https://huggingface.co/)
+language models.
 
-## Setup for development
+## Installation
+
+### With PIP
+```sh
+pip install dom-tokenizers[train]
+```
+
+### From sources
 
 ```sh
 git clone https://github.com/gbenson/dom-tokenizers.git
