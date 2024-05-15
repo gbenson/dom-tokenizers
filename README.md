@@ -29,3 +29,8 @@ python3 -m venv .venv
 pip install --upgrade pip
 pip install -e .[dev,train]
 ```
+
+## Train a tokenizer
+```sh
+train-tokenizer gbenson/interesting-dom-snapshots -n 10000
+```

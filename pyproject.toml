@@ -1,6 +1,6 @@
 [project]
 name = "dom-tokenizers"
-version = "0.0.1"
+version = "0.0.2"
 authors = [{ name = "Gary Benson" }]
 description = "DOM-aware tokenizers for Hugging Face language models"
 readme = "README.md"
