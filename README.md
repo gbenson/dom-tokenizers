@@ -9,12 +9,13 @@
 
 # DOM tokenizers
 
-DOM-aware tokenizers for [🤗 Hugging Face](https://huggingface.co/)
+DOM-aware tokenizers for 🤗 [Hugging Face](https://huggingface.co/)
 language models.
 
 ## Installation
 
 ### With PIP
+
 ```sh
 pip install dom-tokenizers[train]
 ```
@@ -31,6 +32,20 @@ pip install -e .[dev,train]
 ```
 
 ## Train a tokenizer
+
+### On the command line
+
+Check everything's working using a small dataset of around 300 examples:
+
 ```sh
-train-tokenizer gbenson/interesting-dom-snapshots -n 10000
+train-tokenizer gbenson/interesting-dom-snapshots
+```
+
+Train a tokenizer with a 10,000-token vocabulary using a dataset of
+4,536 examples and upload it to the Hub:
+
+```sh
+train-tokenizer gbenson/webui-dom-snapshots -n 10000 -N 4536
+huggingface-cli login
+huggingface-cli upload dom-tokenizer-10k
 ```
