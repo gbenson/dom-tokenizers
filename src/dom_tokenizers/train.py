@@ -69,6 +69,8 @@ def train_tokenizer(
             corpus_size = len(training_dataset)
         except TypeError:
             pass
+    cs = f"{corpus_size:,}" if corpus_size else "an unknown number of"
+    print(f"Generating {vocab_size:,} tokens from {cs} examples:")
 
     # Train the new tokenizer.
     new_tokenizer = base_tokenizer.train_new_from_iterator(
@@ -78,8 +80,16 @@ def train_tokenizer(
         length=corpus_size,
         show_progress=True,
     )
+    new_tokenizer.name_or_path = _pretty_name(new_tokenizer)
 
     return new_tokenizer
+
+
+def _pretty_name(tokenizer=None, *, vocab_size=None, prefix="dom-tokenizer-"):
+    if vocab_size is None:
+        vocab_size = tokenizer.vocab_size
+    pretty_size = _round_and_prefix(vocab_size)
+    return f"{prefix}{pretty_size}"
 
 
 def _round_and_prefix(value):
@@ -123,8 +133,7 @@ def main():
 
     save_directory = args.save_directory
     if save_directory is None:
-        pretty_size = _round_and_prefix(args.vocab_size)
-        save_directory = f"dom-tokenizer-{pretty_size}"
+        save_directory = _pretty_name(vocab_size=args.vocab_size)
         print(f"Output directory: {save_directory}\n")
 
     warnings.filterwarnings("ignore", message=r".*resume_download.*")

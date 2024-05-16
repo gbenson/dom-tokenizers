@@ -9,8 +9,7 @@
 
 # DOM tokenizers
 
-DOM-aware tokenizers for 🤗 [Hugging Face](https://huggingface.co/)
-language models.
+DOM-aware tokenizers for Hugging Face language models.
 
 ## Installation
 
@@ -31,7 +30,9 @@ pip install --upgrade pip
 pip install -e .[dev,train]
 ```
 
-## Train a tokenizer
+## Load a pretrained tokenizer from the Hub
+
+## Train your own
 
 ### On the command line
 
