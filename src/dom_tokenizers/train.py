@@ -1,4 +1,3 @@
-import os
 import json
 import warnings
 
@@ -8,9 +7,7 @@ from math import log10, floor
 from datasets import load_dataset
 from tokenizers.pre_tokenizers import PreTokenizer, WhitespaceSplit
 
-os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = str(True)
-from transformers import AutoTokenizer
-
+from .internal.transformers import AutoTokenizer
 from .pre_tokenizers import DOMSnapshotPreTokenizer
 
 DEFAULT_BASE = "bert-base-uncased"
