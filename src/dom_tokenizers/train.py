@@ -10,7 +10,7 @@ from tokenizers.pre_tokenizers import PreTokenizer, WhitespaceSplit
 from .internal.transformers import AutoTokenizer
 from .pre_tokenizers import DOMSnapshotPreTokenizer
 
-DEFAULT_BASE = "bert-base-uncased"
+DEFAULT_BASE_TOKENIZER = "bert-base-cased"
 DEFAULT_SPLIT = "train"
 DEFAULT_SIZE = 1024
 SEND_BUGS_TO = "https://github.com/gbenson/dom-tokenizers/issues"
@@ -18,7 +18,7 @@ SEND_BUGS_TO = "https://github.com/gbenson/dom-tokenizers/issues"
 
 def train_tokenizer(
         training_dataset,
-        base_tokenizer=DEFAULT_BASE,
+        base_tokenizer=DEFAULT_BASE_TOKENIZER,
         vocab_size=DEFAULT_SIZE,
         corpus_size=None):
 
@@ -115,8 +115,10 @@ def main():
         "dataset", metavar="DATASET",
         help="dataset containing the training corpus")
     p.add_argument(
-        "--base-tokenizer", metavar="ID", default=DEFAULT_BASE,
-        help=f"tokenizer to train ours from [default: {DEFAULT_BASE}]")
+        "--base-tokenizer", metavar="ID",
+        default=DEFAULT_BASE_TOKENIZER,
+        help=(f"tokenizer to train ours from"
+              f" [default: {DEFAULT_BASE_TOKENIZER}]"))
     p.add_argument(
         "--split", default=DEFAULT_SPLIT, metavar="SPLIT", dest="split_name",
         help=(f"split of the training dataset to use"

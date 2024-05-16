@@ -1,4 +1,4 @@
-name: Publish Python distribution to PyPI
+name: CI pipeline
 
 on: push
 
@@ -23,6 +23,9 @@ jobs:
 
       - name: Lint
         run: flake8
+
+      - name: Test
+        run: pytest
 
       - name: Build a binary wheel and a source tarball
         run: python3 -m build
