@@ -43,6 +43,11 @@ class DOMSnapshotPreTokenizer:
 
     def _split_json(self, i: int, s: NormalizedString) -> List[NormalizedString]:
         snapshot = json.loads(s.normalized)
+
+        # Unpack the snapshot if what we have is a raw browser response
+        if not any(key in snapshot for key in ("documents", "strings")):
+            snapshot = snapshot.get("result", snapshot)
+
         return list(chain.from_iterable(self._split_serialized(snapshot)))
 
     def _split_serialized(self, snapshot: dict) -> Iterable[List[NormalizedString]]:

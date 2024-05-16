@@ -1,15 +1,13 @@
 import json
 
 from datasets import Dataset
-from tokenizers.pre_tokenizers import PreTokenizer
 
 from dom_tokenizers.train import train_tokenizer
-from dom_tokenizers.pre_tokenizers import DOMSnapshotPreTokenizer
 
 from .util import load_resource
 
 
-def test_base64(base_tokenizer):
+def test_base64(base_tokenizer, dom_snapshot_pre_tokenizer):
     """Test that base64 is entered successfully.  Incorrectly-sequenced
     lowercasing (i.e. applied prior to pre-tokenization) will cause this
     test to fail.
@@ -22,8 +20,7 @@ def test_base64(base_tokenizer):
             ),
         }),
     )
-    tokenizer.backend_tokenizer.pre_tokenizer = \
-        PreTokenizer.custom(DOMSnapshotPreTokenizer())
+    tokenizer.backend_tokenizer.pre_tokenizer = dom_snapshot_pre_tokenizer
 
     tokens = tokenizer.tokenize(snapshot)
     print(tokens)
