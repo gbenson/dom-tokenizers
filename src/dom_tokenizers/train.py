@@ -81,6 +81,7 @@ def train_tokenizer(
 
     # Post-training fixups.
     new_tokenizer.name_or_path = _pretty_name(new_tokenizer)
+    new_tokenizer.model_max_length = 1 << 27  # >128x the biggest I've seen
     for token in new_special_tokens:
         attr = f"{token[1:-1].lower()}_token"
         if not hasattr(new_tokenizer, attr):
