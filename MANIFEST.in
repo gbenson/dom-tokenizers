@@ -1,3 +1,4 @@
 include .flake8
 graft tests
 global-exclude *.py[cod]
+prune **/*.egg-info

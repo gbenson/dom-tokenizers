@@ -30,8 +30,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/gbenson/dom-tokenizers"
-#Source = "https://github.com/gbenson/dom-tokenizers"
+#Homepage = "https://github.com/gbenson/dom-tokenizers"
+Source = "https://github.com/gbenson/dom-tokenizers"
 
 [project.optional-dependencies]
 dev = [

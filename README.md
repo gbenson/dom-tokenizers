@@ -30,9 +30,7 @@ pip install --upgrade pip
 pip install -e .[dev,train]
 ```
 
-## Load a pretrained tokenizer from the Hub
-
-## Train your own
+## Train a tokenizer
 
 ### On the command line
 
