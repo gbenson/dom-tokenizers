@@ -1,6 +1,6 @@
 [project]
 name = "dom-tokenizers"
-version = "0.0.4"
+version = "0.0.5"
 authors = [{ name = "Gary Benson" }]
 description = "DOM-aware tokenizers for 🤗 Hugging Face language models"
 readme = "README.md"
@@ -39,6 +39,7 @@ dev = [
     "datasets",
     "flake8",
     "pytest",
+    "pytest-cov",
 ]
 train = [
     "datasets",
@@ -53,6 +54,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
+addopts = "--cov=dom_tokenizers"
 filterwarnings = [
     "error",
     "ignore:`resume_download` is deprecated:FutureWarning",

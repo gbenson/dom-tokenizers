@@ -13,6 +13,6 @@ try:
 finally:
     if __orig_val is None:
         os.environ.pop(__var_name)
-    else:
+    else:  # pragma: no cover
         os.environ[__var_name] = __orig_val
     del __var_name, __orig_val, os
