@@ -1,4 +1,5 @@
 import json
+import os
 import warnings
 
 from argparse import ArgumentParser
@@ -91,6 +92,14 @@ def train_tokenizer(
     return new_tokenizer
 
 
+def _save_directory_for(*args, **kwargs):
+    wantdir = _pretty_name(*args, **kwargs)
+    currdir = os.getcwd()
+    if os.path.basename(currdir) == wantdir:
+        return currdir
+    return os.path.join(currdir, wantdir)
+
+
 def _pretty_name(tokenizer=None, *, vocab_size=None, prefix="dom-tokenizer-"):
     if vocab_size is None:
         vocab_size = tokenizer.vocab_size
@@ -141,7 +150,7 @@ def main():
 
     save_directory = args.save_directory
     if save_directory is None:
-        save_directory = _pretty_name(vocab_size=args.vocab_size)
+        save_directory = _save_directory_for(vocab_size=args.vocab_size)
         print(f"Output directory: {save_directory}\n")
 
     warnings.filterwarnings("ignore", message=r".*resume_download.*")
