@@ -7,7 +7,7 @@ from dom_tokenizers.train import train_tokenizer
 from .util import load_resource
 
 
-def test_base64(base_tokenizer, dom_snapshot_pre_tokenizer):
+def test_base64(dom_snapshot_pre_tokenizer):
     """Test that base64 is entered successfully.  Incorrectly-sequenced
     lowercasing (i.e. applied prior to pre-tokenization) will cause this
     test to fail.

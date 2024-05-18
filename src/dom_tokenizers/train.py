@@ -6,10 +6,9 @@ from argparse import ArgumentParser
 from math import log10, floor
 
 from datasets import load_dataset
-from tokenizers.pre_tokenizers import PreTokenizer, WhitespaceSplit
+from tokenizers.pre_tokenizers import WhitespaceSplit
 
-from .internal.transformers import AutoTokenizer
-from .pre_tokenizers import DOMSnapshotPreTokenizer
+from .tokenizers import DOMSnapshotTokenizer
 
 DEFAULT_BASE_TOKENIZER = "bert-base-cased"
 DEFAULT_SPLIT = "train"
@@ -25,17 +24,8 @@ def train_tokenizer(
 
     # Create the base tokenizer we'll train our new tokenizer from.
     if isinstance(base_tokenizer, str):
-        base_tokenizer = AutoTokenizer.from_pretrained(base_tokenizer)
-
-    # Create the custom pretokenizer our new tokenizer will use.
-    new_pretokenizer = DOMSnapshotPreTokenizer()
-
-    # List the custom special tokens that need adding to our tokenizer.
-    new_special_tokens = [
-        special_token
-        for special_token in new_pretokenizer.special_tokens
-        if base_tokenizer.tokenize(special_token) != [special_token]
-    ]
+        base_tokenizer = DOMSnapshotTokenizer.from_pretrained(
+            base_tokenizer)
 
     # It's not possible to train using a custom pre-tokenizer, the Rust
     # code raises "Exception: Custom PreTokenizer cannot be serialized"
@@ -44,9 +34,9 @@ def train_tokenizer(
     # whitespace and hope the regular pretokenizer takes it back apart
     # how we need it to.
 
+    new_pretokenizer = base_tokenizer.backend_tokenizer.pre_tokenizer
     base_tokenizer.backend_tokenizer.pre_tokenizer = WhitespaceSplit()
     base_pretokenizer = base_tokenizer.backend_tokenizer.pre_tokenizer
-    new_pretokenizer = PreTokenizer.custom(new_pretokenizer)
 
     def futz_input(real_input):
         pretokenized = new_pretokenizer.pre_tokenize_str(real_input)
@@ -56,6 +46,14 @@ def train_tokenizer(
         got_tokens = [token for token, offsets in pretokenized]
         assert got_tokens == want_tokens
         return futzed_input
+
+    # List the custom special tokens that need adding to our tokenizer.
+    dom_snapshot_pre_tokenizer = base_tokenizer.backend_pre_tokenizer
+    new_special_tokens = [
+        special_token
+        for special_token in dom_snapshot_pre_tokenizer.special_tokens
+        if base_tokenizer.tokenize(special_token) != [special_token]
+    ]
 
     def get_training_corpus():
         for row in training_dataset:

@@ -4,10 +4,8 @@ import warnings
 from argparse import ArgumentParser
 
 from datasets import load_dataset
-from tokenizers.pre_tokenizers import PreTokenizer
 
-from .internal.transformers import AutoTokenizer
-from .pre_tokenizers import DOMSnapshotPreTokenizer
+from .tokenizers import DOMSnapshotTokenizer
 
 DEFAULT_DATASET = "gbenson/interesting-dom-snapshots"
 DEFAULT_SPLIT = "train"
@@ -31,9 +29,7 @@ def main():
 
     warnings.filterwarnings("ignore", message=r".*resume_download.*")
 
-    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
-    tokenizer.backend_tokenizer.pre_tokenizer = \
-        PreTokenizer.custom(DOMSnapshotPreTokenizer())
+    tokenizer = DOMSnapshotTokenizer.from_pretrained(args.tokenizer)
 
     dataset = load_dataset(args.dataset, split=args.split)
     rows = ((row["source_index"], row["dom_snapshot"]) for row in dataset)
