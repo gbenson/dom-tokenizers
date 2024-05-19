@@ -118,36 +118,36 @@ def _round_and_prefix(value):
 
 
 def main():
-    p = ArgumentParser(
+    parser = ArgumentParser(
         description="Train DOM-aware tokenizers.",
         epilog=f"Report bugs to: <{SEND_BUGS_TO}>.")
-    p.add_argument(
+    parser.add_argument(
         "dataset", metavar="DATASET",
         help="dataset containing the training corpus")
-    p.add_argument(
+    parser.add_argument(
         "--base-tokenizer", metavar="ID",
         default=DEFAULT_BASE_TOKENIZER,
         help=(f"tokenizer to train ours from"
               f" [default: {DEFAULT_BASE_TOKENIZER}]"))
-    p.add_argument(
-        "--split", default=DEFAULT_SPLIT, metavar="SPLIT", dest="split_name",
+    parser.add_argument(
+        "-s", "--split", metavar="SPLIT", default=DEFAULT_SPLIT,
         help=(f"split of the training dataset to use"
               f" [default: {DEFAULT_SPLIT}]"))
-    p.add_argument(
+    parser.add_argument(
         "-N", "--num-inputs", metavar="N", dest="corpus_size",
         type=int,
         help=("number of sequences in the training dataset, if known;"
               " this is used to provide meaningful progress tracking"))
-    p.add_argument(
+    parser.add_argument(
         "-n", "--num-tokens", metavar="N", dest="vocab_size", type=int,
         default=DEFAULT_SIZE,
         help=(f"desired vocabulary size, including all special tokens and"
               f" the initial alphabet [default: {DEFAULT_SIZE} tokens]"))
-    p.add_argument(
+    parser.add_argument(
         "-o", "--output", metavar="DIR", dest="save_directory",
         help=("directory to save the trained tokenizer into"
               " [default: something based on targeted vocabulary size]"))
-    args = p.parse_args()
+    args = parser.parse_args()
 
     save_directory = args.save_directory
     if save_directory is None:
@@ -159,7 +159,7 @@ def main():
     tokenizer = train_tokenizer(
         load_dataset(
             args.dataset,
-            split=args.split_name,
+            split=args.split,
             streaming=True),
         base_tokenizer=args.base_tokenizer,
         vocab_size=args.vocab_size,
