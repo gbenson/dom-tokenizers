@@ -13,6 +13,7 @@ from xml.dom import Node
 import magic
 
 from tokenizers import NormalizedString, PreTokenizedString
+from unidecode import unidecode
 
 
 class DOMSnapshotPreTokenizer:
@@ -99,8 +100,7 @@ def base64_matcher(min_encoded_len=24):
 
 class TokenEmitter:
     MAXWORDLEN = 32
-    WORD_RE = re.compile(
-        r"[a-z0-9]+(?:[a-z0-9']*[a-z0-9])?")  # XXX English only :(
+    WORD_RE = re.compile(r"\w+(?:['’]\w+)*")
     ESCAPED_RE = re.compile(
         r"((?:%|\\x|\\u[0-9a-f]{2})[0-9a-f]{2})", re.I)
     HEX_RE = re.compile(r"^(?:0x|[0-9a-f]{2})[0-9a-f]{6,}$")
@@ -184,7 +184,33 @@ class TokenEmitter:
             text = text[limit:]
 
     def _split_words(self, text):
-        return self.WORD_RE.findall(text.lower())
+        # self.WORD_RE uses "\w" to match all unicode alphanumerics, but
+        # that also matches "_" which we don't want, so we zap them here
+        text = text.replace("_", " ")
+
+        # We currently limit the characters in tokens to a small subset
+        # of ASCII.  Allowing any uncode alphanumeric massively inflates
+        # the tokenizer's base vocabulary, from 68 symbols to 1145 with
+        # gbenson/interesting-dom-snapshots, and that's a small dataset
+        # of which only a small fraction uses non-Latin alphabets.  If
+        # nothing else this means we need a larger vocabulary and hence
+        # more complex models, and it doesn't make sense to take that hit
+        # without a more representative corpus or any way to create or
+        # validate one.  Until then, we use unidecode to transliterate
+        # non-ASCII characters, as a way to get meaning into embeddings
+        # of non-Latin-alphabet texts.  It's by no means perfect, see
+        # https://pypi.org/project/Unidecode/#frequently-asked-questions
+        # for e.g. issues with CJK languages, but transliteration gets
+        # at least some meaning, meaning we lose if we just drop all the
+        # not-ASCII on the floor.  It also means we generate tokenizers
+        # that can encode pretty much anything, from the BMP at least.
+        words = []
+        for word in self.WORD_RE.findall(text):
+            if word.isascii():
+                words.append(word)
+            else:
+                words.extend(self._split_words(unidecode(word)))
+        return [word.lower() for word in words]
 
     def _match_urlish_base64(self, encoded):
         urlish = "/".join(self.URLISH_RE.findall(encoded))

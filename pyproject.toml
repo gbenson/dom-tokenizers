@@ -1,6 +1,6 @@
 [project]
 name = "dom-tokenizers"
-version = "0.0.8"
+version = "0.0.9"
 authors = [{ name = "Gary Benson" }]
 description = "DOM-aware tokenizers for 🤗 Hugging Face language models"
 readme = "README.md"
@@ -27,6 +27,7 @@ dependencies = [
     "python-magic",
     "tokenizers",
     "transformers",
+    "unidecode",
 ]
 
 [project.urls]
@@ -50,6 +51,7 @@ train = [
 [project.scripts]
 train-tokenizer = "dom_tokenizers.train:main"
 dump-tokenizations = "dom_tokenizers.dump:main"
+diff-tokenizer = "dom_tokenizers.diff:main"
 tokenizer-diff = "dom_tokenizers.diff:main"
 
 [build-system]
