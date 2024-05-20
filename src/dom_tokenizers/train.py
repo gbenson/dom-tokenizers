@@ -154,11 +154,12 @@ def main():
 
     warnings.filterwarnings("ignore", message=r".*resume_download.*")
 
+    is_local = os.path.exists(args.dataset)
     tokenizer = train_tokenizer(
         load_dataset(
             args.dataset,
             split=args.split,
-            streaming=True),
+            streaming=not is_local),
         base_tokenizer=args.base_tokenizer,
         vocab_size=args.vocab_size,
         corpus_size=args.corpus_size)
