@@ -36,7 +36,7 @@ class TokenStreamDiffer:
                             self.a, alo, ahi,
                             self.b, blo, bhi):
                         yield line
-                case other:
+                case other:  # noqa: F841
                     raise NotImplementedError((tag, alo, ahi, blo, bhi))
 
     @staticmethod
