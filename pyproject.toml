@@ -62,3 +62,10 @@ filterwarnings = [
     "error",
     "ignore:`resume_download` is deprecated:FutureWarning",
 ]
+
+[tool.coverage.run]
+omit = [
+    "*/.venv/*",
+    "src/dom_tokenizers/dump.py",
+    "src/dom_tokenizers/diff.py",
+]
