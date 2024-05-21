@@ -1,10 +1,10 @@
 [project]
 name = "dom-tokenizers"
-version = "0.0.9"
-authors = [{ name = "Gary Benson" }]
+version = "0.0.10"
+authors = [{ name = "Gary Benson", email = "gary@gbenson.net" }]
 description = "DOM-aware tokenizers for 🤗 Hugging Face language models"
 readme = "README.md"
-license = { text = "Apache-2.0" }
+license = { text = "Apache Software License" }
 requires-python = ">=3.10"  # match..case
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -31,7 +31,7 @@ dependencies = [
 ]
 
 [project.urls]
-#Homepage = f"https://huggingface.co/gbenson/dom-tokenizer-{size}"
+Homepage = "https://github.com/gbenson/dom-tokenizers"
 Source = "https://github.com/gbenson/dom-tokenizers"
 
 [project.optional-dependencies]

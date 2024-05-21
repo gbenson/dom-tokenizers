@@ -15,8 +15,10 @@ import magic
 from tokenizers import NormalizedString, PreTokenizedString
 from unidecode import unidecode
 
+from .pre_tokenizer import BasePreTokenizer as PreTokenizer
 
-class DOMSnapshotPreTokenizer:
+
+class DOMSnapshotPreTokenizer(PreTokenizer):
     """Pre-tokenizer that consumes JSON-serialized DOM snapshots
     and emits tokenized representations of the snapshotted DOMs.
     """

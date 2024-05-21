@@ -48,7 +48,7 @@ def train_tokenizer(
         return futzed_input
 
     # List the custom special tokens that need adding to our tokenizer.
-    dom_snapshot_pre_tokenizer = base_tokenizer.backend_pre_tokenizer
+    dom_snapshot_pre_tokenizer = base_tokenizer.dom_pre_tokenizer
     new_special_tokens = [
         special_token
         for special_token in dom_snapshot_pre_tokenizer.special_tokens
