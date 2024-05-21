@@ -1,6 +1,7 @@
 import pytest
 
-from dom_tokenizers import DOMSnapshotTokenizer
+from dom_tokenizers import DOMSnapshotPreTokenizer
+from dom_tokenizers.internal.transformers import AutoTokenizer
 from dom_tokenizers.train import DEFAULT_BASE_TOKENIZER
 
 
@@ -9,7 +10,9 @@ def dom_snapshot_tokenizer():
     """An instance of a tokenizer that consumes JSON-serialized
     DOM snapshots.
     """
-    return DOMSnapshotTokenizer.from_pretrained(DEFAULT_BASE_TOKENIZER)
+    tokenizer = AutoTokenizer.from_pretrained(DEFAULT_BASE_TOKENIZER)
+    DOMSnapshotPreTokenizer.hook_into(tokenizer)
+    return tokenizer
 
 
 @pytest.fixture

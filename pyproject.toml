@@ -2,7 +2,7 @@
 name = "dom-tokenizers"
 version = "0.0.10"
 authors = [{ name = "Gary Benson", email = "gary@gbenson.net" }]
-description = "DOM-aware tokenizers for 🤗 Hugging Face language models"
+description = "DOM-aware tokenization for 🤗 Hugging Face language models"
 readme = "README.md"
 license = { text = "Apache Software License" }
 requires-python = ">=3.10"  # match..case
@@ -24,10 +24,11 @@ classifiers = [
     "Topic :: Text Processing :: Markup :: HTML",
 ]
 dependencies = [
-    "python-magic",
+    "python-magic",       # XXX review
     "tokenizers",
-    "transformers",
-    "unidecode",
+    "transformers",       # move to dev, train
+    "typing-extensions",
+    "unidecode",          # XXX review
 ]
 
 [project.urls]

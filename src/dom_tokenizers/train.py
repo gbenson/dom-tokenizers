@@ -8,7 +8,8 @@ from math import log10, floor
 from datasets import load_dataset
 from tokenizers.pre_tokenizers import WhitespaceSplit
 
-from .tokenizers import DOMSnapshotTokenizer
+from .internal.transformers import AutoTokenizer
+from .pre_tokenizers import DOMSnapshotPreTokenizer
 
 DEFAULT_BASE_TOKENIZER = "bert-base-cased"
 DEFAULT_SPLIT = "train"
@@ -24,8 +25,8 @@ def train_tokenizer(
 
     # Create the base tokenizer we'll train our new tokenizer from.
     if isinstance(base_tokenizer, str):
-        base_tokenizer = DOMSnapshotTokenizer.from_pretrained(
-            base_tokenizer)
+        base_tokenizer = AutoTokenizer.from_pretrained(base_tokenizer)
+        DOMSnapshotPreTokenizer.hook_into(base_tokenizer)
 
     # It's not possible to train using a custom pre-tokenizer, the Rust
     # code raises "Exception: Custom PreTokenizer cannot be serialized"
