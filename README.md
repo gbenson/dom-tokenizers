@@ -9,7 +9,7 @@
 
 # DOM tokenizers
 
-DOM-aware tokenizers for Hugging Face language models.
+DOM-aware tokenization for Hugging Face language models.
 
 ## Installation
 
