@@ -22,9 +22,6 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
     """Pre-tokenizer that consumes JSON-serialized DOM snapshots
     and emits tokenized representations of the snapshotted DOMs.
     """
-    bos_token = "[BOS]"        # beginning of sequence
-    eos_token = "[EOS]"        # end of sequence
-    sep_token = "[SEP]"        # separator between documents
     elem_token = "[TAG]"       # beginning of element name
     attr_token = "[ATTR]"      # beginning of attribute
     comm_token = "[COMMENT]"   # beginning of comment
@@ -59,9 +56,6 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
         attr_token = [NormalizedString(self.attr_token)]
 
         for document_index, document in enumerate(snapshot["documents"]):
-            token = self.bos_token if document_index == 0 else self.sep_token
-            yield [NormalizedString(token)]
-
             nodes = document["nodes"]
             for node_index, node_values in enumerate(zip(
                     nodes["nodeType"],
@@ -85,8 +79,6 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
                     case Node.COMMENT_NODE:
                         yield [NormalizedString(self.comm_token)]
                         yield emitter.emit(value_index)
-
-        yield [NormalizedString(self.eos_token)]
 
 
 _B64_RE_S = r"(?:[A-Za-z0-9+/]{4}){"
