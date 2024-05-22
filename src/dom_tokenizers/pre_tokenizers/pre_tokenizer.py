@@ -1,9 +1,9 @@
 import weakref
 
-from tokenizers.pre_tokenizers import PreTokenizer
+from tokenizers.pre_tokenizers import PreTokenizer as _PreTokenizer
 
 
-class BasePreTokenizer:
+class PreTokenizer:
     @classmethod
     def hook_into(cls, tokenizer):
         """Reconfigure `tokenizer` for DOM-aware pre-tokenization.
@@ -34,7 +34,7 @@ class BasePreTokenizer:
         self._tokenizer = weakref.proxy(tokenizer)
 
         # Install ourself as the tokenizer's pre-tokenizer.
-        backend.pre_tokenizer = PreTokenizer.custom(self)
+        backend.pre_tokenizer = _PreTokenizer.custom(self)
 
         # Attempt to detect and postpone any lowercasing applied to
         # our input until after the base64 detection and handling is

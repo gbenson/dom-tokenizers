@@ -15,7 +15,7 @@ import magic
 from tokenizers import NormalizedString, PreTokenizedString
 from unidecode import unidecode
 
-from .pre_tokenizer import BasePreTokenizer as PreTokenizer
+from .pre_tokenizer import PreTokenizer
 
 
 class DOMSnapshotPreTokenizer(PreTokenizer):
