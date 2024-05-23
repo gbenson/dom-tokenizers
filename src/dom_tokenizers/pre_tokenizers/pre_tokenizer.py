@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from tokenizers import NormalizedString, PreTokenizedString
 from tokenizers.pre_tokenizers import PreTokenizer as _PreTokenizer
 
+from .splitter import TextSplitter
 from .token_buffer import TokenBuffer
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ class PreTokenizer(ABC):
         cls().bind_to(tokenizer)
 
     def __init__(self):
+        self._splitter = TextSplitter()
         self._tokenizer = None
         self._lowercase_output = False
 
