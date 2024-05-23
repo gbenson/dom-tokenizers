@@ -15,6 +15,7 @@ from tokenizers import NormalizedString
 from unidecode import unidecode
 
 from .pre_tokenizer import PreTokenizer
+from .token_buffer import TokenBuffer
 
 
 class DOMSnapshotPreTokenizer(PreTokenizer):
@@ -35,7 +36,7 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
             if attr.endswith("token")
         ]
 
-    def pre_tokenize_dom(self, serialized: str) -> Iterable[str]:
+    def pre_tokenize_dom(self, buf: TokenBuffer, serialized: str):
         """Transform a serialized DOM into a sequence of tokens.
         """
         snapshot = json.loads(serialized)
@@ -44,9 +45,7 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
         if not any(key in snapshot for key in ("documents", "strings")):
             snapshot = snapshot.get("result", snapshot)
 
-        return (ns.original
-                for ns in chain.from_iterable(
-                        self._split_serialized(snapshot)))
+        buf.extend(chain.from_iterable(self._split_serialized(snapshot)))
 
     def _split_serialized(self, snapshot: dict) -> Iterable[list[NormalizedString]]:
         emitter = TokenEmitter(self, snapshot)
