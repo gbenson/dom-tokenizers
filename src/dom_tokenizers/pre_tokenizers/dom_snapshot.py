@@ -7,7 +7,6 @@ from collections.abc import Iterable
 from functools import cached_property
 from itertools import chain
 from posixpath import commonprefix
-from typing import List
 from xml.dom import Node
 
 import magic
@@ -49,7 +48,7 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
                 for ns in chain.from_iterable(
                         self._split_serialized(snapshot)))
 
-    def _split_serialized(self, snapshot: dict) -> Iterable[List[NormalizedString]]:
+    def _split_serialized(self, snapshot: dict) -> Iterable[list[NormalizedString]]:
         emitter = TokenEmitter(self, snapshot)
         elem_token = [NormalizedString(self.elem_token)]
         attr_token = [NormalizedString(self.attr_token)]

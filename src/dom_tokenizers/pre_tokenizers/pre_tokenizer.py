@@ -3,7 +3,6 @@ import weakref
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from typing import List
 
 from tokenizers import NormalizedString, PreTokenizedString
 from tokenizers.pre_tokenizers import PreTokenizer as _PreTokenizer
@@ -61,7 +60,7 @@ class PreTokenizer(ABC):
             self,
             index: int,
             split: NormalizedString,
-    ) -> List[NormalizedString]:
+    ) -> list[NormalizedString]:
         try:
             return [
                 NormalizedString(token)
