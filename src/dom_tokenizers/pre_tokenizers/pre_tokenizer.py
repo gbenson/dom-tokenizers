@@ -1,9 +1,17 @@
+import logging
 import weakref
 
+from abc import ABC, abstractmethod
+from collections.abc import Iterable
+from typing import List
+
+from tokenizers import NormalizedString, PreTokenizedString
 from tokenizers.pre_tokenizers import PreTokenizer as _PreTokenizer
 
+logger = logging.getLogger(__name__)
 
-class PreTokenizer:
+
+class PreTokenizer(ABC):
     @classmethod
     def hook_into(cls, tokenizer):
         """Reconfigure `tokenizer` for DOM-aware pre-tokenization.
@@ -42,3 +50,29 @@ class PreTokenizer:
         if getattr(backend.normalizer, "lowercase", None) is True:
             backend.normalizer.lowercase = False
             self._lowercase_output = True
+
+    # Entry point
+
+    def pre_tokenize(self, pretok: PreTokenizedString):
+        pretok.split(self._pre_tokenize_dom)
+    pre_tokenize.__doc__ = _PreTokenizer.pre_tokenize.__doc__
+
+    def _pre_tokenize_dom(
+            self,
+            index: int,
+            split: NormalizedString,
+    ) -> List[NormalizedString]:
+        try:
+            return [
+                NormalizedString(token)
+                for token in self.pre_tokenize_dom(split.original)
+            ]
+        except Exception as e:
+            logger.exception(f"{type(e).__name__} in pre-tokenizer:")
+            raise
+
+    @abstractmethod
+    def pre_tokenize_dom(self, serialized: str) -> Iterable[str]:
+        """Transform a serialized DOM into a sequence of tokens.
+        """
+        raise NotImplementedError

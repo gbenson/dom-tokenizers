@@ -12,7 +12,7 @@ from xml.dom import Node
 
 import magic
 
-from tokenizers import NormalizedString, PreTokenizedString
+from tokenizers import NormalizedString
 from unidecode import unidecode
 
 from .pre_tokenizer import PreTokenizer
@@ -36,19 +36,18 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
             if attr.endswith("token")
         ]
 
-    def pre_tokenize(self, pretok: PreTokenizedString):
-        """Pre-tokenize a :class:`~tokenizers.PyPreTokenizedString` in-place.
+    def pre_tokenize_dom(self, serialized: str) -> Iterable[str]:
+        """Transform a serialized DOM into a sequence of tokens.
         """
-        pretok.split(self._split_json)
-
-    def _split_json(self, i: int, s: NormalizedString) -> List[NormalizedString]:
-        snapshot = json.loads(s.normalized)
+        snapshot = json.loads(serialized)
 
         # Unpack the snapshot if what we have is a raw browser response
         if not any(key in snapshot for key in ("documents", "strings")):
             snapshot = snapshot.get("result", snapshot)
 
-        return list(chain.from_iterable(self._split_serialized(snapshot)))
+        return (ns.original
+                for ns in chain.from_iterable(
+                        self._split_serialized(snapshot)))
 
     def _split_serialized(self, snapshot: dict) -> Iterable[List[NormalizedString]]:
         emitter = TokenEmitter(self, snapshot)
