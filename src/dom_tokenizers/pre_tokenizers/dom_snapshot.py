@@ -1,6 +1,5 @@
 import json
 
-from collections.abc import Iterable
 from itertools import chain
 from xml.dom import Node
 
@@ -39,7 +38,8 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
         if not any(key in snapshot for key in ("documents", "strings")):
             snapshot = snapshot.get("result", snapshot)
 
-        emitter = TokenEmitter(self._splitter, snapshot)
+        tokens = TokenCache(snapshot["strings"], self._splitter)
+
         for document in snapshot["documents"]:
             nodes = document["nodes"]
             for node_index, node_values in enumerate(zip(
@@ -52,28 +52,28 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
                 match node_type:
                     case Node.ELEMENT_NODE:
                         buf.append(self.elem_token)
-                        buf.extend(emitter.emit(name_index))
+                        buf.extend(tokens[name_index])
                         for attr_index in range(0, len(attr_indexes), 2):
                             buf.append(self.attr_token)
-                            buf.extend(emitter.emit(attr_indexes[attr_index]))
-                            buf.extend(emitter.emit(attr_indexes[attr_index + 1]))
+                            buf.extend(tokens[attr_indexes[attr_index]])
+                            buf.extend(tokens[attr_indexes[attr_index + 1]])
 
                     case Node.TEXT_NODE:
-                        buf.extend(emitter.emit(value_index))
+                        buf.extend(tokens[value_index])
 
                     case Node.COMMENT_NODE:
                         buf.append(self.comm_token)
-                        buf.extend(emitter.emit(value_index))
+                        buf.extend(tokens[value_index])
 
 
-class TokenEmitter:
-    def __init__(self, splitter: TextSplitter, snapshot: dict):
+class TokenCache:
+    def __init__(self, strings: list[str], splitter: TextSplitter):
+        self._strings = strings
         self._splitter = splitter
-        self._strings = snapshot["strings"]
         self._tokens = {}
 
-    def emit(self, string_index: int) -> Iterable[NormalizedString]:
-        """Emit tokens for one string in a DOM snapshot's string table.
+    def __getitem__(self, string_index: int) -> list[NormalizedString]:
+        """Return tokens for one string in a DOM snapshot's string table.
         """
         if string_index < 0:
             return []
