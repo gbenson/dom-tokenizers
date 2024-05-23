@@ -18,7 +18,7 @@ def test_raw_response_unwrapping(pre_tokenizer):
     del browser_response
 
     regular_tokens = pre_tokenizer.tokenize(regular_snapshot)
-    assert regular_tokens.count("[TAG]") == 5
+    assert regular_tokens.count("<") == 5
     assert regular_tokens.count("hello") == 2
 
     wrapped_tokens = pre_tokenizer.tokenize(wrapped_snapshot)

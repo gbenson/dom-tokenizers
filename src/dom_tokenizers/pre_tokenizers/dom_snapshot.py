@@ -6,6 +6,7 @@ from xml.dom import Node
 from tokenizers import NormalizedString
 
 from .compat_itertools import batched
+from .html import is_void_element
 from .pre_tokenizer import PreTokenizer
 from .splitter import TextSplitter
 from .token_buffer import TokenBuffer
@@ -15,9 +16,7 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
     """Pre-tokenizer that consumes JSON-serialized DOM snapshots
     and emits tokenized representations of the snapshotted DOMs.
     """
-    elem_token = "[TAG]"       # beginning of element name
-    attr_token = "[ATTR]"      # beginning of attribute
-    comm_token = "[COMMENT]"   # beginning of comment
+    _SENTINEL = type("Sentinel", (), dict(index=-1))
 
     def pre_tokenize_dom(self, buf: TokenBuffer, serialized: str):
         """Transform a serialized DOM into a sequence of tokens.
@@ -31,26 +30,62 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
         tokens = TokenCache(snapshot["strings"], self._splitter)
 
         for document in snapshot["documents"]:
+            stack = [self._SENTINEL]
             for node in _Node.each(document["nodes"]):
+                while stack[-1].index != node.parent_index:
+                    self._terminate(buf, tokens, stack.pop())
+
                 match node.type:
                     case Node.ELEMENT_NODE:
-                        buf.append(self.elem_token)
+                        buf.append("<")
                         buf.extend(tokens[node.name_index])
                         for name_index, value_index in node.attr_indexes:
-                            buf.append(self.attr_token)
+                            buf.append("_")
                             buf.extend(tokens[name_index])
+                            buf.append("=")
                             buf.extend(tokens[value_index])
+                        buf.append(">")
+                        stack.append(node)
 
                     case Node.TEXT_NODE:
                         buf.extend(tokens[node.value_index])
 
+                    case Node.DOCUMENT_NODE:
+                        stack.append(node)
+
                     case Node.COMMENT_NODE:
-                        buf.append(self.comm_token)
+                        buf.append("<!--")
                         buf.extend(tokens[node.value_index])
+                        buf.append("-->")
+
+                    case Node.DOCUMENT_TYPE_NODE:
+                        buf.append("<!DOCTYPE")
+                        buf.extend(tokens[node.name_index])
+                        public_index = document["publicId"]
+                        if public_index >= 0:
+                            buf.append("PUBLIC")
+                            buf.extend(tokens[public_index])
+                        system_index = document["systemId"]
+                        if system_index >= 0:
+                            buf.extend(tokens[system_index])
+                        buf.append(">")
+
+        for node in reversed(stack[2:]):
+            self._terminate(buf, tokens, node)
+
+    @staticmethod
+    def _terminate(buf, tokens, node):
+        tag = tokens._strings[node.name_index]
+        if is_void_element(tag):
+            return
+        buf.append("</")
+        buf.extend(tokens[node.name_index])
+        buf.append(">")
 
 
 class _BaseNode:
     FIELDS = {
+        "parentIndex": ("parent_index", int),
         "nodeType": ("type", int),
         "nodeName": ("name_index", int),
         "nodeValue": ("value_index", int),
