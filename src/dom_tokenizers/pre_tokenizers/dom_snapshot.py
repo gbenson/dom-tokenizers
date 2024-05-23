@@ -45,14 +45,8 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
         if not any(key in snapshot for key in ("documents", "strings")):
             snapshot = snapshot.get("result", snapshot)
 
-        buf.extend(chain.from_iterable(self._split_serialized(snapshot)))
-
-    def _split_serialized(self, snapshot: dict) -> Iterable[list[NormalizedString]]:
         emitter = TokenEmitter(self, snapshot)
-        elem_token = [NormalizedString(self.elem_token)]
-        attr_token = [NormalizedString(self.attr_token)]
-
-        for document_index, document in enumerate(snapshot["documents"]):
+        for document in snapshot["documents"]:
             nodes = document["nodes"]
             for node_index, node_values in enumerate(zip(
                     nodes["nodeType"],
@@ -63,19 +57,19 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
 
                 match node_type:
                     case Node.ELEMENT_NODE:
-                        yield elem_token
-                        yield emitter.emit(name_index)
+                        buf.append(self.elem_token)
+                        buf.extend(emitter.emit(name_index))
                         for attr_index in range(0, len(attr_indexes), 2):
-                            yield attr_token
-                            yield emitter.emit(attr_indexes[attr_index])
-                            yield emitter.emit(attr_indexes[attr_index + 1])
+                            buf.append(self.attr_token)
+                            buf.extend(emitter.emit(attr_indexes[attr_index]))
+                            buf.extend(emitter.emit(attr_indexes[attr_index + 1]))
 
                     case Node.TEXT_NODE:
-                        yield emitter.emit(value_index)
+                        buf.extend(emitter.emit(value_index))
 
                     case Node.COMMENT_NODE:
-                        yield [NormalizedString(self.comm_token)]
-                        yield emitter.emit(value_index)
+                        buf.append(self.comm_token)
+                        buf.extend(emitter.emit(value_index))
 
 
 _B64_RE_S = r"(?:[A-Za-z0-9+/]{4}){"
