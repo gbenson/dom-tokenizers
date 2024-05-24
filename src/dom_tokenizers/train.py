@@ -13,14 +13,14 @@ from .pre_tokenizers import DOMSnapshotPreTokenizer
 
 DEFAULT_BASE_TOKENIZER = "bert-base-cased"
 DEFAULT_SPLIT = "train"
-DEFAULT_SIZE = 1024
+DEFAULT_VOCAB_SIZE = 1024
 SEND_BUGS_TO = "https://github.com/gbenson/dom-tokenizers/issues"
 
 
 def train_tokenizer(
         training_dataset,
         base_tokenizer=DEFAULT_BASE_TOKENIZER,
-        vocab_size=DEFAULT_SIZE,
+        vocab_size=DEFAULT_VOCAB_SIZE,
         corpus_size=None):
 
     # Create the base tokenizer we'll train our new tokenizer from.
@@ -59,7 +59,7 @@ def train_tokenizer(
         except TypeError:
             pass
     cs = f"{corpus_size:,}" if corpus_size else "an unknown number of"
-    print(f"Generating {vocab_size:,} tokens from {cs} examples:")
+    print(f"Generating up to {vocab_size:,} tokens from {cs} examples:")
 
     # Train the new tokenizer.
     new_tokenizer = base_tokenizer.train_new_from_iterator(
@@ -123,9 +123,9 @@ def main():
               " this is used to provide meaningful progress tracking"))
     parser.add_argument(
         "-n", "--num-tokens", metavar="N", dest="vocab_size", type=int,
-        default=DEFAULT_SIZE,
+        default=DEFAULT_VOCAB_SIZE,
         help=(f"desired vocabulary size, including all special tokens and"
-              f" the initial alphabet [default: {DEFAULT_SIZE} tokens]"))
+              f" the initial alphabet [default: {DEFAULT_VOCAB_SIZE} tokens]"))
     parser.add_argument(
         "-o", "--output", metavar="DIR", dest="save_directory",
         help=("directory to save the trained tokenizer into"
