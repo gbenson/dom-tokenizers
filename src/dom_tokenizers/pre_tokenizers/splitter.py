@@ -95,7 +95,7 @@ class TextSplitter:
         text = text.replace("_", " ")
 
         # We currently limit the characters in tokens to a small subset
-        # of ASCII.  Allowing any uncode alphanumeric massively inflates
+        # of ASCII.  Allowing all uncode alphanumerics massively inflates
         # the tokenizer's base vocabulary, from 68 symbols to 1145 with
         # gbenson/interesting-dom-snapshots, and that's a small dataset
         # of which only a small fraction uses non-Latin alphabets.  If
@@ -116,7 +116,7 @@ class TextSplitter:
                 words.append(word)
             else:
                 words.extend(self._split_words(unidecode(word)))
-        return [word.lower() for word in words]
+        return words
 
     def _match_urlish_base64(self, encoded):
         urlish = "/".join(self.URLISH_RE.findall(encoded))
@@ -157,7 +157,7 @@ class TextSplitter:
         full_magic = magic.from_buffer(data)
         easy_magic = full_magic.split(maxsplit=1)[0]
         if easy_magic in {"GIF", "zlib", "JPEG"}:
-            return [self.base64_token, easy_magic.lower()]
+            return [self.base64_token, easy_magic]
         if " Web/P image" in full_magic:
             return [self.base64_token, "webp"]
         if full_magic.startswith("Web Open Font Format"):

@@ -69,9 +69,9 @@ def test_xhtml(dom_snapshot_tokenizer, expect_lowercased_tokens):
              "-->"],
 
             # DTD
-            ["<!DOCTYPE", "html", "PUBLIC", "w3c", "dtd", "xhtml", "1",
-             "0", "strict", "en", "http", "www", "w3", "org", "tr",
-             "xhtml1", "dtd", "xhtml1", "strict", "dtd", ">"],
+            ["<!DOCTYPE", "html", "PUBLIC", "W3C", "DTD", "XHTML", "1",
+             "0", "Strict", "EN", "http", "www", "w3", "org", "TR",
+             "xhtml1", "DTD", "xhtml1", "strict", "dtd", ">"],
 
             # Start tag with namespaced attributes
             ["<", "html", "_", "xmlns", "=", "http", "www", "w3", "org",
@@ -82,18 +82,18 @@ def test_xhtml(dom_snapshot_tokenizer, expect_lowercased_tokens):
             ["<", "head", ">"],
 
             # Two empty element tags with regular attributes
-            ["<", "meta", "_", "http", "equiv", "=", "content", "type",
+            ["<", "meta", "_", "http", "equiv", "=", "Content", "Type",
              "_", "content", "=", "text", "html", "charset", "utf", "8",
              ">"],
             ["<", "meta", "_", "name", "=", "viewport", "_", "content",
              "=", "width", "device", "width", ">"],
 
             # The start and end tags of an element with some content
-            ["<", "title", ">", "inauspicious", "org", "</", "title", ">"],
+            ["<", "title", ">", "Inauspicious", "org", "</", "title", ">"],
 
             # A void element with a non-ASCII character in an attribute
             ["<", "meta", "_", "name", "=", "copyright", "_", "content",
-             "=", "copyright", "2017", "gary", "benson", ">"],
+             "=", "Copyright", "2017", "Gary", "Benson", ">"],
     ):
         limit = start + len(expect)
         if expect_lowercased_tokens:
@@ -123,10 +123,12 @@ def test_xhtml(dom_snapshot_tokenizer, expect_lowercased_tokens):
         "<", "div", "_", "id", "=", "entries", ">",
         "</", "div", ">",
         "<", "div", "_", "id", "=", "loadmore", ">",
-        "load", "more",
+        "Load", "more",
         "</", "div", ">",
         "</", "div", ">",
         "</", "body", ">",
         "</", "html", ">",
     ]
+    if expect_lowercased_tokens:
+        expect = [token.lower() for token in expect]
     assert tokens[-len(expect):] == expect

@@ -38,7 +38,7 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
                 match node.type:
                     case Node.ELEMENT_NODE:
                         buf.append("<")
-                        buf.extend(tokens[node.name_index])
+                        buf.extend(tokens.get(node.name_index, lowercase=True))
                         for name_index, value_index in node.attr_indexes:
                             buf.append("_")
                             buf.extend(tokens[name_index])
@@ -79,7 +79,7 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
         if is_void_element(tag):
             return
         buf.append("</")
-        buf.extend(tokens[node.name_index])
+        buf.extend(tokens.get(node.name_index, lowercase=True))
         buf.append(">")
 
 
@@ -117,18 +117,30 @@ class TokenCache:
         self._strings = strings
         self._splitter = splitter
         self._tokens = {}
+        self._lowercase_tokens = {}
 
-    def __getitem__(self, string_index: int) -> list[NormalizedString]:
+    def get(
+            self,
+            string_index: int,
+            *,
+            lowercase=False
+    ) -> list[NormalizedString]:
         """Return tokens for one string in a DOM snapshot's string table.
         """
         if string_index < 0:
             return []
-        tokens = self._tokens.get(string_index)
+        cache = self._lowercase_tokens if lowercase else self._tokens
+        tokens = cache.get(string_index)
         if tokens is not None:
             return tokens
         tokens = [
             NormalizedString(token)
             for token in self._splitter.split(self._strings[string_index])
         ]
-        self._tokens[string_index] = tokens
+        if lowercase:
+            for token in tokens:
+                token.lowercase()
+        cache[string_index] = tokens
         return tokens
+
+    __getitem__ = get

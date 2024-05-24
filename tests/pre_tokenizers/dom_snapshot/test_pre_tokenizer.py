@@ -19,7 +19,7 @@ def test_raw_response_unwrapping(pre_tokenizer):
 
     regular_tokens = pre_tokenizer.tokenize(regular_snapshot)
     assert regular_tokens.count("<") == 5
-    assert regular_tokens.count("hello") == 2
+    assert regular_tokens.count("world") == 2
 
     wrapped_tokens = pre_tokenizer.tokenize(wrapped_snapshot)
     assert wrapped_tokens == regular_tokens
