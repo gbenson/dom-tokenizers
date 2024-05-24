@@ -11,7 +11,7 @@ from tokenizers.pre_tokenizers import WhitespaceSplit
 from .internal.transformers import AutoTokenizer
 from .pre_tokenizers import DOMSnapshotPreTokenizer
 
-DEFAULT_BASE_TOKENIZER = "bert-base-cased"
+DEFAULT_BASE_TOKENIZER = "bert-base-uncased"
 DEFAULT_SPLIT = "train"
 DEFAULT_VOCAB_SIZE = 1024
 SEND_BUGS_TO = "https://github.com/gbenson/dom-tokenizers/issues"
@@ -149,9 +149,10 @@ def main():
         base_tokenizer=args.base_tokenizer,
         vocab_size=args.vocab_size,
         corpus_size=args.corpus_size)
-    print(f'\n{tokenizer.tokenize("training complete")}')
+    tokenizer.backend_tokenizer.pre_tokenizer = WhitespaceSplit()
+    print(f'\n{tokenizer.tokenize("Training complete")}')
 
     tokenizer.save_pretrained(save_directory)
 
-    print(tokenizer.tokenize("tokenizer state saved"))
-    print(tokenizer.tokenize("see you soon") + ["!!"])
+    print(tokenizer.tokenize("Tokenizer state saved"))
+    print(tokenizer.tokenize("See you soon!!"))
