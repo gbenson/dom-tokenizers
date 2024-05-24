@@ -2,7 +2,7 @@
     <a href="https://badge.fury.io/py/dom-tokenizers">
          <img alt="Build" src="https://badge.fury.io/py/dom-tokenizers.svg">
     </a>
-    <a href="https://github.com/gbenson/dom-tokenizers/blob/master/LICENSE">
+    <a href="https://github.com/gbenson/dom-tokenizers/blob/main/LICENSE">
         <img alt="GitHub" src="https://img.shields.io/github/license/gbenson/dom-tokenizers.svg?color=blue">
     </a>
 </p>
