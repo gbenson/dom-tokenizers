@@ -7,7 +7,7 @@ from dom_tokenizers.train import train_tokenizer, DEFAULT_VOCAB_SIZE
 from .util import load_resource
 
 
-def test_base64(dom_snapshot_pre_tokenizer):
+def test_base64(dom_snapshot_tokenizer, expect_lowercased_tokens):
     """Test that base64 is entered successfully.  Incorrectly-sequenced
     lowercasing (i.e. applied prior to pre-tokenization) will cause this
     test to fail.
@@ -19,10 +19,9 @@ def test_base64(dom_snapshot_pre_tokenizer):
                 json.loads(snapshot),
             ),
         }),
+        base_tokenizer=dom_snapshot_tokenizer.name_or_path  # flex with string
     )
     assert tokenizer.vocab_size < DEFAULT_VOCAB_SIZE
-    tokenizer.backend_tokenizer.pre_tokenizer = dom_snapshot_pre_tokenizer
-
     tokens = tokenizer.tokenize(snapshot)
     print(tokens)
 
@@ -30,8 +29,9 @@ def test_base64(dom_snapshot_pre_tokenizer):
     expect = [
         "<", "img",
         "_", "src", "=",
-        "data", "image", "svg", "xml", "base64", "[BASE64]", "svg",
-        "_", "width", "=",
+        "data", "image", "svg", "xml", "base64",
+        "[base64]" if expect_lowercased_tokens else "[BASE64]",
+        "svg", "_", "width", "=",
         "256",
     ]
     assert tokens.count("img") == 1
@@ -41,7 +41,7 @@ def test_base64(dom_snapshot_pre_tokenizer):
     assert tokens[start:limit] == expect
 
 
-def test_xhtml(dom_snapshot_pre_tokenizer):
+def test_xhtml(dom_snapshot_tokenizer, expect_lowercased_tokens):
     """Test that various weird XHTML things make it through the splitter.
     The first 100 or so tokens of this document flex almost every branch
     of the pre-tokenizer, including some edge cases we likely don't test
@@ -56,11 +56,10 @@ def test_xhtml(dom_snapshot_pre_tokenizer):
             ),
         }),
         vocab_size=max_vocab_size,
+        base_tokenizer=dom_snapshot_tokenizer,  # flex with prebuilt tokenizer
     )
     assert tokenizer.vocab_size > DEFAULT_VOCAB_SIZE
     assert tokenizer.vocab_size < max_vocab_size
-    tokenizer.backend_tokenizer.pre_tokenizer = dom_snapshot_pre_tokenizer
-
     tokens = tokenizer.tokenize(snapshot)
 
     start = 0
@@ -97,6 +96,8 @@ def test_xhtml(dom_snapshot_pre_tokenizer):
              "=", "copyright", "2017", "gary", "benson", ">"],
     ):
         limit = start + len(expect)
+        if expect_lowercased_tokens:
+            expect = [token.lower() for token in expect]
         assert tokens[start:limit] == expect
         start = limit
 

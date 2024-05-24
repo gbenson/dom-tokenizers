@@ -22,7 +22,6 @@ class PreTokenizer(ABC):
     def __init__(self):
         self._splitter = TextSplitter()
         self._tokenizer = None
-        self._lowercase_output = False
 
     def bind_to(self, tokenizer):
         """Reconfigure `tokenizer` to pre-tokenize using `self`.
@@ -46,17 +45,20 @@ class PreTokenizer(ABC):
         # Install ourself as the tokenizer's pre-tokenizer.
         backend.pre_tokenizer = _PreTokenizer.custom(self)
 
-        # Attempt to detect and postpone any lowercasing applied to
-        # our input until after the base64 detection and handling is
-        # complete.
-        if getattr(backend.normalizer, "lowercase", None) is True:
-            backend.normalizer.lowercase = False
-            self._lowercase_output = True
+    @property
+    def _backend_tokenizer(self):
+        return self._tokenizer.backend_tokenizer
+
+    @property
+    def _normalizer(self):
+        return self._backend_tokenizer.normalizer
 
     # Entry point
 
     def pre_tokenize(self, pretok: PreTokenizedString):
         pretok.split(self._pre_tokenize_dom)
+        pretok.normalize(self._normalizer.normalize)
+
     pre_tokenize.__doc__ = _PreTokenizer.pre_tokenize.__doc__
 
     def _pre_tokenize_dom(

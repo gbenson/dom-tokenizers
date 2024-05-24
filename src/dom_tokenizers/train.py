@@ -72,6 +72,7 @@ def train_tokenizer(
     # Post-training fixups.
     new_tokenizer.name_or_path = _pretty_name(new_tokenizer)
     new_tokenizer.model_max_length = 1 << 27  # >128x the biggest I've seen
+    DOMSnapshotPreTokenizer.hook_into(new_tokenizer)
 
     return new_tokenizer
 
