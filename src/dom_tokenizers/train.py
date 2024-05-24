@@ -48,14 +48,6 @@ def train_tokenizer(
         assert got_tokens == want_tokens
         return futzed_input
 
-    # List the custom special tokens that need adding to our tokenizer.
-    dom_snapshot_pre_tokenizer = base_tokenizer.dom_pre_tokenizer
-    new_special_tokens = [
-        special_token
-        for special_token in dom_snapshot_pre_tokenizer.special_tokens
-        if base_tokenizer.tokenize(special_token) != [special_token]
-    ]
-
     def get_training_corpus():
         for row in training_dataset:
             yield futz_input(json.dumps(row["dom_snapshot"]))
@@ -73,7 +65,6 @@ def train_tokenizer(
     new_tokenizer = base_tokenizer.train_new_from_iterator(
         text_iterator=get_training_corpus(),
         vocab_size=vocab_size,
-        new_special_tokens=new_special_tokens,
         length=corpus_size,
         show_progress=True,
     )
@@ -81,13 +72,6 @@ def train_tokenizer(
     # Post-training fixups.
     new_tokenizer.name_or_path = _pretty_name(new_tokenizer)
     new_tokenizer.model_max_length = 1 << 27  # >128x the biggest I've seen
-    for token in new_special_tokens:
-        attr = f"{token[1:-1].lower()}_token"
-        if not hasattr(new_tokenizer, attr):
-            continue  # not a "special" special token
-        if getattr(new_tokenizer, attr) is not None:
-            continue  # already got this one
-        setattr(new_tokenizer, attr, token)
 
     return new_tokenizer
 

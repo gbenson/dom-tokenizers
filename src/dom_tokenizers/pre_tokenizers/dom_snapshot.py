@@ -1,6 +1,5 @@
 import json
 
-from itertools import chain
 from xml.dom import Node
 
 from tokenizers import NormalizedString
@@ -17,17 +16,6 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
     elem_token = "[TAG]"       # beginning of element name
     attr_token = "[ATTR]"      # beginning of attribute
     comm_token = "[COMMENT]"   # beginning of comment
-
-    @property
-    def special_tokens(self):
-        return [
-            value
-            for attr, value in chain.from_iterable(
-                    x.__dict__.items()
-                    for x in (self.__class__, self._splitter)
-            )
-            if attr.endswith("token")
-        ]
 
     def pre_tokenize_dom(self, buf: TokenBuffer, serialized: str):
         """Transform a serialized DOM into a sequence of tokens.
