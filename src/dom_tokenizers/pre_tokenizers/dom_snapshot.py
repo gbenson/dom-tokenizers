@@ -1,9 +1,11 @@
 import json
 
+from dataclasses import make_dataclass
 from xml.dom import Node
 
 from tokenizers import NormalizedString
 
+from .compat_itertools import batched
 from .pre_tokenizer import PreTokenizer
 from .splitter import TextSplitter
 from .token_buffer import TokenBuffer
@@ -29,29 +31,50 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
         tokens = TokenCache(snapshot["strings"], self._splitter)
 
         for document in snapshot["documents"]:
-            nodes = document["nodes"]
-            for node_index, node_values in enumerate(zip(
-                    nodes["nodeType"],
-                    nodes["nodeName"],
-                    nodes["nodeValue"],
-                    nodes["attributes"])):
-                node_type, name_index, value_index, attr_indexes = node_values
-
-                match node_type:
+            for node in _Node.each(document["nodes"]):
+                match node.type:
                     case Node.ELEMENT_NODE:
                         buf.append(self.elem_token)
-                        buf.extend(tokens[name_index])
-                        for attr_index in range(0, len(attr_indexes), 2):
+                        buf.extend(tokens[node.name_index])
+                        for name_index, value_index in node.attr_indexes:
                             buf.append(self.attr_token)
-                            buf.extend(tokens[attr_indexes[attr_index]])
-                            buf.extend(tokens[attr_indexes[attr_index + 1]])
+                            buf.extend(tokens[name_index])
+                            buf.extend(tokens[value_index])
 
                     case Node.TEXT_NODE:
-                        buf.extend(tokens[value_index])
+                        buf.extend(tokens[node.value_index])
 
                     case Node.COMMENT_NODE:
                         buf.append(self.comm_token)
-                        buf.extend(tokens[value_index])
+                        buf.extend(tokens[node.value_index])
+
+
+class _BaseNode:
+    FIELDS = {
+        "nodeType": ("type", int),
+        "nodeName": ("name_index", int),
+        "nodeValue": ("value_index", int),
+        "attributes": ("_attr_indexes", list[int]),
+    }
+
+    @classmethod
+    def each(cls, nodes):
+        return (
+            cls(index, *values)
+            for index, values in enumerate(zip(*(
+                    nodes[field]
+                    for field in cls.FIELDS)))
+        )
+
+    @property
+    def attr_indexes(self):
+        return batched(self._attr_indexes, 2)
+
+
+_Node = make_dataclass(
+    "Node",
+    [("index", int)] + list(_BaseNode.FIELDS.values()),
+    bases=(_BaseNode,))
 
 
 class TokenCache:

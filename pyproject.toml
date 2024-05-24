@@ -70,4 +70,5 @@ omit = [
     "*/.venv/*",
     "src/dom_tokenizers/dump.py",
     "src/dom_tokenizers/diff.py",
+    "src/dom_tokenizers/pre_tokenizers/compat_itertools.py",
 ]
