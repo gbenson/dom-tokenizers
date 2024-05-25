@@ -2,6 +2,7 @@ import os
 import warnings
 
 from argparse import ArgumentParser
+from itertools import chain
 from math import log10, floor
 
 from datasets import load_dataset
@@ -42,7 +43,9 @@ def train_tokenizer(
 
     def futz_input(real_input):
         pretokenized = new_pretokenizer.pre_tokenize_str(real_input)
-        want_tokens = [token for token, offsets in pretokenized]
+        want_tokens = list(chain.from_iterable(
+            token.split() for token, offsets in pretokenized
+        ))
         futzed_input = " ".join(want_tokens)
         pretokenized = base_pretokenizer.pre_tokenize_str(futzed_input)
         got_tokens = [token for token, offsets in pretokenized]
