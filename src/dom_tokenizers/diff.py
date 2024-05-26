@@ -4,7 +4,8 @@ import warnings
 from argparse import ArgumentParser
 from difflib import SequenceMatcher
 
-from .tokenizers import DOMSnapshotTokenizer
+from .internal.transformers import AutoTokenizer
+from .pre_tokenizers import DOMSnapshotPreTokenizer
 
 SEND_BUGS_TO = "https://github.com/gbenson/dom-tokenizers/issues"
 
@@ -103,8 +104,8 @@ def main():
 
     warnings.filterwarnings("ignore", message=r".*resume_download.*")
 
-    tokenizer = DOMSnapshotTokenizer.from_pretrained(args.tokenizer)
-    assert tokenizer.backend_tokenizer.normalizer.strip_accents
+    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
+    DOMSnapshotPreTokenizer.hook_into(tokenizer)
 
     for line in open(args.reference).readlines():
         row = json.loads(line)

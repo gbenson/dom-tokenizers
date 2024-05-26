@@ -5,7 +5,8 @@ from argparse import ArgumentParser
 
 from datasets import load_dataset
 
-from .tokenizers import DOMSnapshotTokenizer
+from .internal.transformers import AutoTokenizer
+from .pre_tokenizers import DOMSnapshotPreTokenizer
 
 DEFAULT_DATASET = "gbenson/interesting-dom-snapshots"
 DEFAULT_SPLIT = "train"
@@ -29,7 +30,8 @@ def main():
 
     warnings.filterwarnings("ignore", message=r".*resume_download.*")
 
-    tokenizer = DOMSnapshotTokenizer.from_pretrained(args.tokenizer)
+    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
+    DOMSnapshotPreTokenizer.hook_into(tokenizer)
 
     dataset = load_dataset(args.dataset, split=args.split)
     rows = ((row["source_index"], row["dom_snapshot"]) for row in dataset)
