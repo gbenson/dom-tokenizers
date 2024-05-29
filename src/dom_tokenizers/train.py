@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from math import log10, floor
 
 from datasets import load_dataset
+from tokenizers import AddedToken
 from tokenizers.pre_tokenizers import WhitespaceSplit
 
 from .internal.transformers import AutoTokenizer
@@ -65,6 +66,10 @@ def train_tokenizer(
     new_tokenizer = base_tokenizer.train_new_from_iterator(
         text_iterator=get_training_corpus(),
         vocab_size=vocab_size,
+        new_special_tokens=[
+            AddedToken(t, single_word=True)
+            for t in sorted(base_tokenizer.dom_pre_tokenizer.special_tokens)
+        ],
         length=corpus_size,
         show_progress=True,
     )

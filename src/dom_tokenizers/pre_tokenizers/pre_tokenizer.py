@@ -2,6 +2,7 @@ import logging
 import weakref
 
 from abc import ABC, abstractmethod
+from functools import cached_property
 
 from tokenizers import NormalizedString, PreTokenizedString
 from tokenizers.pre_tokenizers import PreTokenizer as _PreTokenizer
@@ -53,11 +54,20 @@ class PreTokenizer(ABC):
     def _normalizer(self):
         return self._backend_tokenizer.normalizer
 
+    @cached_property
+    def special_tokens(self) -> set[str]:
+        return set(self._splitter.special_tokens)
+
+    def _normalize_nonspecial(self, split: NormalizedString):
+        if split.original in self.special_tokens:
+            return
+        self._normalizer.normalize(split)
+
     # Entry point
 
     def pre_tokenize(self, pretok: PreTokenizedString):
         pretok.split(self._pre_tokenize_dom)
-        pretok.normalize(self._normalizer.normalize)
+        pretok.normalize(self._normalize_nonspecial)
 
     pre_tokenize.__doc__ = _PreTokenizer.pre_tokenize.__doc__
 

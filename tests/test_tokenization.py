@@ -7,7 +7,7 @@ from dom_tokenizers.train import train_tokenizer, DEFAULT_VOCAB_SIZE
 from .util import load_resource
 
 
-def test_base64(dom_snapshot_tokenizer, expect_lowercased_tokens):
+def test_base64(dom_snapshot_tokenizer):
     """Test that base64 is entered successfully.  Incorrectly-sequenced
     lowercasing (i.e. applied prior to pre-tokenization) will cause this
     test to fail.
@@ -30,7 +30,7 @@ def test_base64(dom_snapshot_tokenizer, expect_lowercased_tokens):
         "<", "img",
         "_", "src", "=",
         "data", "image", "svg", "xml", "base64",
-        "[base64]" if expect_lowercased_tokens else "[BASE64]",
+        "[BASE64]",
         "svg", "_", "width", "=",
         "256",
     ]

@@ -29,6 +29,10 @@ class TextSplitter:
     base64_token: str = "[BASE64]"
     long_token: str = "[LONG]"
 
+    @property
+    def special_tokens(self) -> Iterable[str]:
+        return (v for k, v in self.__dict__.items() if k.endswith("_token"))
+
     MAXWORDLEN = 32
     WORD_RE = re.compile(r"\w+(?:['’]\w+)*")
     ESCAPED_RE = re.compile(
