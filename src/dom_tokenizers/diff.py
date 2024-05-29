@@ -27,17 +27,12 @@ class TokenStreamDiffer:
             match tag:
                 case "equal":
                     pass  # reset?
-                case "insert":
+                case c if c in {"insert", "replace", "delete"}:
                     for line in self._evaluate_change(
                             self.a, alo, ahi,
                             self.b, blo, bhi):
                         yield line
-                case "replace":
-                    for line in self._evaluate_change(
-                            self.a, alo, ahi,
-                            self.b, blo, bhi):
-                        yield line
-                case other:  # noqa: F841
+                case _:
                     raise NotImplementedError((tag, alo, ahi, blo, bhi))
 
     @staticmethod
