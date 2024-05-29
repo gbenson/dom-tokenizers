@@ -26,6 +26,8 @@ jobs:
 
       - name: Test
         run: pytest
+        env:
+          TEST_DATASET: gbenson/interesting-dom-snapshots
 
       - name: Build a binary wheel and a source tarball
         run: python3 -m build

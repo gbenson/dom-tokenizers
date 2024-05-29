@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from dom_tokenizers import DOMSnapshotPreTokenizer
@@ -33,3 +35,13 @@ def expect_lowercased_tokens(dom_snapshot_tokenizer):
     False otherwise.
     """
     return dom_snapshot_tokenizer.do_lower_case
+
+
+@pytest.fixture
+def test_dataset():
+    """The name or path of a dataset to use for integration testing.
+    """
+    try:
+        return os.environ["TEST_DATASET"]
+    except KeyError as e:
+        pytest.skip(f"Set {e} to run this test")

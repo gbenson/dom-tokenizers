@@ -38,6 +38,7 @@ dev = [
     "datasets",
     "flake8",
     "flake8-quotes",
+    "pillow",
     "pytest",
     "pytest-cov",
     "transformers",
