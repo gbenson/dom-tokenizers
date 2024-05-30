@@ -86,12 +86,15 @@ class PreTokenizer(ABC):
             buf = TokenBuffer()
             self.pre_tokenize_dom(buf, split.original)
             return buf.tokens
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.exception(f"{type(e).__name__} in pre-tokenizer:")
             raise
 
     @abstractmethod
-    def pre_tokenize_dom(self, buf: TokenBuffer, serialized: str):
+    def pre_tokenize_dom(
+            self,
+            buf: TokenBuffer,
+            serialized: str):  # pragma: no cover
         """Transform a serialized DOM into a sequence of tokens.
         """
         raise NotImplementedError
