@@ -1,10 +1,8 @@
-import json
-
 from datasets import Dataset
 
 from dom_tokenizers.train import train_tokenizer, DEFAULT_VOCAB_SIZE
 
-from .util import load_resource
+from .util import load_resource, json
 
 
 def test_base64(dom_snapshot_tokenizer):

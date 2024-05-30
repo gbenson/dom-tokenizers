@@ -1,5 +1,7 @@
 import os
 
+from dom_tokenizers.internal import json  # noqa: F401
+
 
 def get_resource_filename(filename, *, ext=None):
     if ext and not filename.endswith(ext):

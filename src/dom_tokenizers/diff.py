@@ -1,9 +1,9 @@
-import json
 import warnings
 
 from argparse import ArgumentParser
 from difflib import SequenceMatcher
 
+from .internal import json
 from .internal.transformers import AutoTokenizer
 from .pre_tokenizers import DOMSnapshotPreTokenizer
 
@@ -105,7 +105,7 @@ def main():
     for line in open(args.reference).readlines():
         row = json.loads(line)
         source_index = row["source_index"]
-        serialized = json.dumps(row["dom_snapshot"], separators=(",", ":"))
+        serialized = json.dumps(row["dom_snapshot"])
         b = tokenizer.tokenize(serialized)
         a = row["tokenized"]
         if b == a:

@@ -1,5 +1,4 @@
 import cProfile as profile
-import json
 import os
 import time
 import warnings
@@ -10,6 +9,7 @@ from hashlib import sha256
 from datasets import load_dataset
 from tokenizers import NormalizedString
 
+from .internal import json
 from .internal.transformers import AutoTokenizer
 from .pre_tokenizers import DOMSnapshotPreTokenizer
 
@@ -83,7 +83,7 @@ def main():
         os.makedirs(os.path.dirname(cache_filename), exist_ok=True)
         with open(cache_filename, "w") as fp:
             for row in training_dataset:
-                json.dump(row["dom_snapshot"], fp, separators=(",", ":"))
+                json.dump(row["dom_snapshot"], fp)
                 fp.write("\n")
         del training_dataset
 

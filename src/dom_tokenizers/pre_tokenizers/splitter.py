@@ -1,4 +1,3 @@
-import json
 import re
 
 from base64 import b64decode
@@ -12,6 +11,7 @@ import magic
 
 from unidecode import unidecode
 
+from ..internal import json
 
 _B64_RE_S = r"(?:[A-Za-z0-9+/]{4}){"
 _B64_RE_E = r",}(?:[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?"

@@ -1,4 +1,3 @@
-import json
 import os
 import warnings
 
@@ -9,6 +8,7 @@ from datasets import load_dataset
 from tokenizers import AddedToken
 from tokenizers.pre_tokenizers import WhitespaceSplit
 
+from .internal import json
 from .internal.transformers import AutoTokenizer
 from .pre_tokenizers import DOMSnapshotPreTokenizer
 

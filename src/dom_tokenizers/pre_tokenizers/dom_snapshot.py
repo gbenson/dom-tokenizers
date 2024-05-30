@@ -1,10 +1,9 @@
-import json
-
 from dataclasses import make_dataclass
 from xml.dom import Node
 
 from tokenizers import NormalizedString
 
+from ..internal import json
 from .compat_itertools import batched
 from .html import is_void_element
 from .pre_tokenizer import PreTokenizer

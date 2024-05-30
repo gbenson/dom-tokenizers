@@ -1,6 +1,6 @@
 [project]
 name = "dom-tokenizers"
-version = "0.0.13"
+version = "0.0.14"
 authors = [{ name = "Gary Benson", email = "gary@gbenson.net" }]
 description = "DOM-aware tokenization for 🤗 Hugging Face language models"
 readme = "README.md"
@@ -37,6 +37,7 @@ dev = [
     "build",
     "datasets",
     "flake8",
+    "flake8-custom-import-rules",
     "flake8-quotes",
     "pillow",
     "pytest",

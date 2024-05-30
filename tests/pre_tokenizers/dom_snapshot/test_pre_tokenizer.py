@@ -1,6 +1,4 @@
-import json
-
-from ...util import load_resource
+from ...util import load_resource, json
 
 
 def test_raw_response_unwrapping(pre_tokenizer):
@@ -13,7 +11,7 @@ def test_raw_response_unwrapping(pre_tokenizer):
     assert set(browser_response.keys()) == {"id", "result", "sessionId"}
     regular_snapshot = browser_response["result"]
     assert set(regular_snapshot.keys()) == {"documents", "strings"}
-    regular_snapshot = json.dumps(regular_snapshot, separators=(",", ":"))
+    regular_snapshot = json.dumps(regular_snapshot)
     assert regular_snapshot in wrapped_snapshot
     del browser_response
 

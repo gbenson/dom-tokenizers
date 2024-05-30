@@ -1,10 +1,10 @@
-import json
 import warnings
 
 from argparse import ArgumentParser
 
 from datasets import load_dataset
 
+from .internal import json
 from .internal.transformers import AutoTokenizer
 from .pre_tokenizers import DOMSnapshotPreTokenizer
 
@@ -35,11 +35,11 @@ def main():
 
     dataset = load_dataset(args.dataset, split=args.split)
     rows = ((row["source_index"], row["dom_snapshot"]) for row in dataset)
-    rows = ((si, ss, json.dumps(ss, separators=(",", ":"))) for si, ss in rows)
+    rows = ((si, ss, json.dumps(ss)) for si, ss in rows)
     rows = ((len(ser), si, ss, ser) for si, ss, ser in rows)
     for _, source_index, dom_snapshot, serialized in sorted(rows):
         print(json.dumps(dict(
             source_index=source_index,
             dom_snapshot=dom_snapshot,
             tokenized=tokenizer.tokenize(serialized)
-        ), separators=(",", ":")))
+        )))

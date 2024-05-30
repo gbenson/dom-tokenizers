@@ -1,5 +1,6 @@
 [flake8]
 exclude = .git,__pycache__,venv*,.venv*,build,dist,.local,.#*,#*,*~
+restricted_packages = json
 inline-quotes = "
 per-file-ignores =
     # imported but unused
