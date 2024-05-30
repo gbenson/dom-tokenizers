@@ -132,13 +132,13 @@ class TokenCache:
         tokens = cache.get(string_index)
         if tokens is not None:
             return tokens
+        text = self._strings[string_index]
+        if lowercase:
+            text = text.lower()
         tokens = [
             NormalizedString(token)
-            for token in self._splitter.split(self._strings[string_index])
+            for token in self._splitter.split(text)
         ]
-        if lowercase:
-            for token in tokens:
-                token.lowercase()
         cache[string_index] = tokens
         return tokens
 
