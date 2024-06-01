@@ -22,11 +22,20 @@ class Writer:
             filename = f"{filename}{ext}"
         self.filename = filename
         self._mode = mode
+        self._is_open = False
 
     @cached_property
     def _fp(self):
-        return open(self.filename, self._mode)
+        try:
+            return open(self.filename, self._mode)
+        finally:
+            self._is_open = True
 
     def write(self, **fields):
         json.dump(fields, self._fp)
         self._fp.write("\n")
+
+    def close(self):
+        if not self._is_open:
+            return
+        self._fp.close()
