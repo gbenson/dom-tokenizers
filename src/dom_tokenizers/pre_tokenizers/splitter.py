@@ -67,7 +67,7 @@ class TextSplitter:
     # XXX older bits
     MAXWORDLEN = 32
     WORD_RE = re.compile(r"(?:\w+['’]?)+")
-    HEX_RE = re.compile(r"^(?:0x|[0-9a-f]{2})[0-9a-f]{6,}$")
+    HEX_RE = re.compile(r"^(?:0x|[0-9a-f]{2})[0-9a-f]{6,}$", re.I)
     DIGIT_RE = re.compile(r"\d")
     LONGEST_URLISH = 1024  # XXX?
     URLISH_LOOKBACK = 5
@@ -85,6 +85,7 @@ class TextSplitter:
     LONGEST_PHITEST = 85
     BASE64_RE = base64_matcher()
     B64_PNG_RE = re.compile(r"iVBORw0KGg[o-r]")
+    B64_HEX_RE = re.compile(r"^(0x)?([0-9a-f]+)$", re.I)
     XML_HDR_RE = re.compile(r"<([a-z]{3,})\s+[a-z]+")
 
     def split(self, text: str) -> Iterable[str]:
@@ -161,6 +162,23 @@ class TextSplitter:
 
             # Are we looking at something that might be base64?
             if self.BASE64_RE.match(curr):
+                if curr.isdecimal():
+                    if VERBOSE:  # pragma: no cover
+                        debug("it's a decimal number")
+                    cursor += 1
+                    continue
+
+                match = self.B64_HEX_RE.match(curr)
+                if match:
+                    if VERBOSE:  # pragma: no cover
+                        debug("it's hex")
+                    new_splits = match.groups()
+                    if new_splits[0] is not None:
+                        splits[cursor:cursor+1] = new_splits
+                        cursor += 1
+                    cursor += 1
+                    continue
+
                 cursor = self._sub_base64(splits, cursor)
                 continue
 
