@@ -63,11 +63,12 @@ class TextSplitter:
     JS_CHAR_ESCAPE_RE = re.compile(f"(?:x|u{_TWOHEX}){_TWOHEX}")
     ENTITY_STARTS = {"&", "&#"}
     ESCAPE_START_RE = re.compile(r".([&%\\])")
+    PREFIXED_HEX_RE = re.compile(r"^(0x)([0-9a-f]+)([+/=]*)$", re.I)
 
     # XXX older bits
     MAXWORDLEN = 32
     WORD_RE = re.compile(r"(?:\w+['’]?)+")
-    HEX_RE = re.compile(r"^(?:0x|[0-9a-f]{2})[0-9a-f]{6,}$")
+    HEX_RE = re.compile(r"^(?:0x|[0-9a-f]{2})[0-9a-f]{6,}$", re.I)
     DIGIT_RE = re.compile(r"\d")
     LONGEST_URLISH = 1024  # XXX?
     URLISH_LOOKBACK = 5
@@ -157,6 +158,15 @@ class TextSplitter:
                 if VERBOSE:  # pragma: no cover
                     debug("it's stuff with underscores")
                 splits[cursor:cursor+1] = new_splits
+                continue
+
+            # Are we looking at some prefixed hex?
+            if (match := self.PREFIXED_HEX_RE.match(curr)):
+                if VERBOSE:  # pragma: no cover
+                    debug("prefixed hex")
+                new_splits = [s for s in match.groups() if s]
+                splits[cursor:cursor+1] = new_splits
+                cursor += len(new_splits)
                 continue
 
             # Are we looking at something that might be base64?

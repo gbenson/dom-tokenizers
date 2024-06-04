@@ -4,7 +4,7 @@ from dom_tokenizers.pre_tokenizers.splitter import TextSplitter
 
 
 @pytest.mark.parametrize(
-    ("text,expect_splits"),
+    "text,expect_splits",
     (("hello world", ["hello", " ", "world"]),
      ("$hello world", ["", "$", "hello", " ", "world"]),
      ("hello-world", ["hello", "-", "world"]),
@@ -55,7 +55,7 @@ def test_first_split_re(text, expect_splits):
 
 
 @pytest.mark.parametrize(
-    ("text,expect_tokens"),
+    "text,expect_tokens",
     (("hello world", ["hello", "world"]),
      ("hello-world", ["hello", "world"]),
      ("hello_world", ["hello", "world"]),
@@ -181,7 +181,28 @@ def test_decoding(text, expect_tokens):
 
 
 @pytest.mark.parametrize(
-    ("text,expect_tokens"),
+    "text,expect_tokens",
+    (("0x0", ["0x", "0"]),
+     ("0x1234", ["0x", "1234"]),
+     ("0x71c765", ["0x", "71c765"]),
+     ("0xdeadbeef",
+      ["0x", "[LONG]", "hex", "digits"]),
+     ("0xdeadbeefL", ["0xdeadbeefL"]),
+     ("0x4AAAAAAAAjq6WYeRDKmebM",
+      ["0x4AAAAAAAAjq6WYeRDKmebM"]),
+     ("0XPmYE28fJingEYE1hThk7F4SZFf1EVe2PxVNsmv",
+      ["[BASE64]"]),
+     ("0XBEA020C3BD417F30DE4D6BD05B0ED310AC586CC0",
+      ["0X", "[LONG]", "hex", "digits"]),
+     ))
+def test_prefixed_hex(text, expect_tokens):
+    """Ensure prefixed hex constants are recognized and split.
+    """
+    assert list(TextSplitter().split(text)) == expect_tokens
+
+
+@pytest.mark.parametrize(
+    "text,expect_tokens",
     (("That\u2019s all we know.",
       ["That's", "all", "we", "know"]),
      ("Page=Login&Action=Login\';\n\t\t\treturn",
