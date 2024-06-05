@@ -1,3 +1,5 @@
+import os
+
 from collections import defaultdict
 from dataclasses import make_dataclass
 from xml.dom import Node
@@ -133,9 +135,20 @@ class TokenCache:
         if tokens is not None:
             return tokens
         text = self._strings[string_index]
-        tokens = [
-            NormalizedString(token)
-            for token in self._splitter.split(text, split_flags)
-        ]
+        tokens = list(self._splitter.split(text, split_flags))
+        for token in tokens:
+            if "l0gh7uis0hpxahwelsqtpiqs2yzobl" not in token.lower():
+                continue
+            filename = "tests/resources/base64-misses/1655961866939.json"
+            for retry in range(5):
+                if not os.path.exists(filename):
+                    break
+                filename += "~"
+            else:
+                raise AssertionError(filename)
+            with open(filename, "w") as fp:
+                json.dump({"text": text}, fp)
+            raise ValueError(token)
+        tokens = list(map(NormalizedString, tokens))
         cache[string_index] = tokens
         return tokens
