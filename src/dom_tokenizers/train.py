@@ -41,7 +41,7 @@ def train_tokenizer(
     base_tokenizer.backend_tokenizer.pre_tokenizer = WhitespaceSplit()
     base_pretokenizer = base_tokenizer.backend_tokenizer.pre_tokenizer
 
-    def futz_input(real_input):
+    def futz_input(real_input, source_index):
         pretokenized = new_pretokenizer.pre_tokenize_str(real_input)
         want_tokens = list(chain.from_iterable(
             token.split() for token, offsets in pretokenized
@@ -54,7 +54,12 @@ def train_tokenizer(
 
     def get_training_corpus():
         for row in training_dataset:
-            yield futz_input(json.dumps(row["dom_snapshot"]))
+            source_index = row["source_index"]
+            filename = os.path.expanduser(f"~/json/{source_index}.json")
+            serialized = json.dumps(row["dom_snapshot"])
+            with open(filename, "w") as fp:
+                fp.write(serialized)
+            yield futz_input(serialized, source_index)
 
     # Try and get a dataset length, for the progress tracker.
     if corpus_size is None:
