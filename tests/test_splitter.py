@@ -232,7 +232,7 @@ def test_prefixed_hex(text, expect_tokens):
      ("src: url(//fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxK"
       ".woff2) format('woff2');\\n  unicode-range: U+0000-00FF, ",
       ["src", "url", "fonts", "gstatic", "com", "s", "roboto", "v18",
-       "KFOmCnqEu92Fr1Mu4mxK", "woff2", "format", "woff2", "unicode",
+       "[BASE64]", "woff2", "format", "woff2", "unicode",
        "range", "U", "0000", "00FF"]),
      ))
 def test_regressions(text, expect_tokens):

@@ -13,6 +13,7 @@ import magic
 from unidecode import unidecode
 
 from ..internal import json
+from .base64 import base64_probability
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
@@ -559,6 +560,10 @@ class TextSplitter:
                 except ValueError:
                     yield "hex"
                 yield "digits"
+                continue
+
+            if len(token) > 4 and base64_probability(token) >= 0.92:
+                yield self.base64_token
                 continue
 
             if len(token) <= self.MAXWORDLEN:
