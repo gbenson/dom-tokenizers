@@ -5,6 +5,7 @@ from base64 import b64decode
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
+from enum import Flag, auto
 from urllib.parse import unquote
 
 import magic
@@ -15,6 +16,25 @@ from ..internal import json
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
+
+
+class Flags(Flag):
+    BASIC = 0              # No unescaping, no base64
+
+    LOWERCASE = auto()     # Lowercase before splitting
+    UNESCAPE_JS = auto()   # Decode JS backslash escapes
+    UNQUOTE_URLS = auto()  # Decode URL encoding
+    SUB_ENTITIES = auto()  # Decode HTML entities
+    SNIFF_BASE64 = auto()  # Detect and substitute base64
+
+    FULL = UNESCAPE_JS | UNQUOTE_URLS | SUB_ENTITIES | SNIFF_BASE64
+
+    TAG_NAME = LOWERCASE
+    ATTR_NAME = BASIC
+    ATTR_VALUE = FULL
+    TEXT = FULL
+    COMMENT = FULL  # XXX maybe... or BASIC? SUB_ENTITIES??
+    DOCTYPE = BASIC
 
 
 class MandatorySplit:  # pragma: no cover
@@ -88,7 +108,7 @@ class TextSplitter:
     B64_PNG_RE = re.compile(r"iVBORw0KGg[o-r]")
     XML_HDR_RE = re.compile(r"<([a-z]{3,})\s+[a-z]+")
 
-    def split(self, text: str) -> Iterable[str]:
+    def split(self, text: str, flags: Flags = Flags.FULL) -> Iterable[str]:
         """Split a string into a sequence of tokens.
 
         It splits on any non-alphanumeric character, but also tries
@@ -98,6 +118,14 @@ class TextSplitter:
         which are just fragments of base64.  It isn't easy though,
         lots of regular text is valid base64, we have to sniff.)
         """
+        if Flags.LOWERCASE in flags:
+            text = text.lower()
+
+        unquote_urls = Flags.UNQUOTE_URLS in flags
+        unescape_js = Flags.UNESCAPE_JS in flags
+        sub_entities = Flags.SUB_ENTITIES in flags
+        sniff_base64 = Flags.SNIFF_BASE64 in flags
+
         VERBOSE = logger.isEnabledFor(logging.DEBUG)
         if VERBOSE and len(text) < 4096:  # pragma: no cover
             debug("input: \x1B[44;36m%s\x1B[0m", text)
@@ -132,21 +160,21 @@ class TextSplitter:
                 continue
 
             # Are we looking at URL-encoding (`%xx` escapes)?
-            if curr == "%":
+            if unquote_urls and curr == "%":
                 if VERBOSE:  # pragma: no cover
                     debug("it's urlencoded")
                 cursor = self._sub_urlencoded(splits, cursor)
                 continue
 
             # Are we looking at Javascript escaping?
-            if curr[0] == "\\":
+            if unescape_js and curr[0] == "\\":
                 if VERBOSE:  # pragma: no cover
                     debug("it's escaped")
                 cursor = self._sub_js_escape(splits, cursor)
                 continue
 
             # Are we looking at character entities?
-            if curr in self.ENTITY_STARTS:
+            if sub_entities and curr in self.ENTITY_STARTS:
                 if VERBOSE:  # pragma: no cover
                     debug("it's an entity")
                 cursor = self._sub_html_entity(splits, cursor)
@@ -170,7 +198,7 @@ class TextSplitter:
                 continue
 
             # Are we looking at something that might be base64?
-            if self.BASE64_RE.match(curr):
+            if sniff_base64 and self.BASE64_RE.match(curr):
                 cursor = self._sub_base64(splits, cursor)
                 continue
 
