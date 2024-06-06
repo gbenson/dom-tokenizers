@@ -12,7 +12,9 @@ def get_resource_filename(filename, *, ext=None):
 
 def open_resource(filename, *, mode="r", encoding="utf-8", **kwargs):
     filename = get_resource_filename(filename, **kwargs)
-    return open(filename, mode=mode, encoding=encoding)
+    return open(
+        filename, mode=mode,
+        encoding=None if mode.endswith("b") else encoding)
 
 
 def load_resource(filename, **kwargs):
