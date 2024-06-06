@@ -1,3 +1,4 @@
+import atexit
 import logging
 import re
 
@@ -448,7 +449,7 @@ class TextSplitter:
                 raise FalseBase64Error("part of a URL")
 
             # It's not obviously part of a URL, time to pull out the big guns
-            splits[cursor:cursor + 1] = self._enter_base64(curr)
+            _ = self._enter_base64(curr)  # XXX
             if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
                 if splits[cursor] == self.base64_token:
                     debug("it's base64?")
@@ -564,6 +565,10 @@ class TextSplitter:
             raise FalseBase64Error("text")
         return [self.base64_token]
 
+    _seen_tokens = set()
+    _tokens_file = open("unique-tokens-4-100", "w")
+    atexit.register(_tokens_file.close)
+
     def _postprocess(self, tokens: Iterable[str]) -> Iterable[str]:
         for token in tokens:
             if token is SPLIT:
@@ -576,6 +581,12 @@ class TextSplitter:
             # tokenizer output to avoid filling the vocabulary with
             # terminal-quotes.
             token = token.rstrip("'")
+
+            if len(token) >= 4:
+                truncated_token = token[:100]
+                if truncated_token not in self._seen_tokens:
+                    print(truncated_token, file=self._tokens_file)
+                self._seen_tokens.add(truncated_token)
 
             if self.HEX_RE.match(token):
                 yield self.long_token
