@@ -295,6 +295,12 @@ class TextSplitter:
             curr = splits[cursor_limit]
             cursor_limit += 1
 
+        if not curr:
+            with open("bad-fails.log", "a") as fp:
+                print(splits[max(cursor-10, 0):min(cursor+10, len(splits))],
+                      file=fp)
+            curr = "[error]"  # XXX what to do?
+
         # Store what we want at `splits[cursor:cursor_limit]` in `result`.
         match curr[0]:
             case "'":
