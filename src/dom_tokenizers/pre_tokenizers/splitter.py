@@ -621,7 +621,7 @@ class TextSplitter:
         return [self.base64_token]
 
     _seen_tokens = set()
-    _tokens_file = open("unique-tokens-4-100", "w")
+    _tokens_file = open("unique-tokens", "w")
     atexit.register(_tokens_file.close)
 
     def _postprocess(self, tokens: Iterable[str]) -> Iterable[str]:
@@ -638,10 +638,9 @@ class TextSplitter:
             token = token.rstrip("'")
 
             if len(token) >= 4:
-                truncated_token = token[:100]
-                if truncated_token not in self._seen_tokens:
-                    print(truncated_token, file=self._tokens_file)
-                self._seen_tokens.add(truncated_token)
+                if token not in self._seen_tokens:
+                    print(token, file=self._tokens_file)
+                self._seen_tokens.add(token)
 
             if self.HEX_RE.match(token):
                 yield self.long_token
