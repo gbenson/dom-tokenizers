@@ -69,6 +69,26 @@ class TextSplitter:
     def special_tokens(self) -> Iterable[str]:
         return (v for k, v in self.__dict__.items() if k.endswith("_token"))
 
+    _APOSTROPHISH = {
+        0x02b9,  # Modifier letter prime
+        0x02bc,  # Modifier letter apostrophe
+        0x02bf,  # Modifier letter left half ring
+        0x02c8,  # Modifier letter vertical line
+        0x055a,  # Armenian apostrophe
+        0x05f3,  # Hebrew punctuation geresh
+        0x1fbd,  # Greek koronis
+        0x1fbf,  # Greek psili
+        0x1ffd,  # Greek oxia
+        0x2018,  # Left single quotation mark
+        0x2019,  # Right single quotation mark
+        0x201b,  # Single high-reversed-9 quotation mark
+        0x2032,  # Prime
+        0x275c,  # Heavy single comma quotation mark ornament
+        0xff07,  # Fullwidth apostrophe
+    }
+    APOSTROPHISH = "".join(map(chr, sorted(_APOSTROPHISH)))
+    APOSTROPHISH_RE = re.compile(rf"[{_APOSTROPHISH}]")
+
     # Partially split into words, but retain the non-word characters
     # until everything's de-escaped and base64 is identified.
     # - `+/=` are allowed within words here to keep base64-encoded
@@ -76,8 +96,8 @@ class TextSplitter:
     # - Apostrophes are... included for now XXX
     # - Underscores are included in "\w", so we have to handle them.
     BASE64_NONWORD = "+/="
-    FIRST_SPLIT_RE = re.compile(rf"([^\w'’{BASE64_NONWORD}]+)")
-    BASE64_NONWORD_RE = re.compile("[+/=]+")
+    FIRST_SPLIT_RE = re.compile(rf"([^\w'{APOSTROPHISH}{BASE64_NONWORD}]+)")
+    BASE64_NONWORD_RE = re.compile(rf"[{BASE64_NONWORD}]+")
 
     _TWOHEX = "[0-9a-fA-F]{2}"
     TWOHEX_RE = re.compile(_TWOHEX)
@@ -88,7 +108,7 @@ class TextSplitter:
 
     # XXX older bits
     MAXWORDLEN = 32
-    WORD_RE = re.compile(r"(?:\w+['’]?)+")
+    WORD_RE = re.compile(rf"(?:\w+['{APOSTROPHISH}]?)+")
     HEX_RE = re.compile(r"^(?:0x|[0-9a-f]{2})[0-9a-f]{6,}$", re.I)
     DIGIT_RE = re.compile(r"\d")
     LONGEST_URLISH = 1024  # XXX?
