@@ -1,6 +1,12 @@
 name: CI pipeline
 
-on: push
+on:
+  push:
+    branches:
+      - main
+      - candidate
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   build:
