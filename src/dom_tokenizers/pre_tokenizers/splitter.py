@@ -265,17 +265,18 @@ class TextSplitter:
             words = self.WORD_RE.findall(curr)
             if len(words) == 1 and words[0] == curr:
                 if not curr.isascii():
+                    # Smash to ASCII if the result will look vaguely the same
                     unidecoded = unidecode(curr)
-                    if unidecoded == curr:  # pragma: no cover
-                        debug("it's some non-ASCII that didn't change?")
-                        cursor += 1  # skip it
-                    else:
-                        if VERBOSE:  # pragma: no cover
-                            debug("it's some non-ASCII")
-                        splits[cursor] = unidecoded
-                    continue
-
-                if VERBOSE:  # pragma: no cover
+                    if len(unidecoded) == len(curr):
+                        fc = sum(int(a == b) for a, b in zip(curr, unidecoded))
+                        if fc > len(curr) / 2:
+                            if VERBOSE:  # pragma: no cover
+                                debug("it's some ASCII-looking non-ASCII")
+                            splits[cursor] = unidecoded
+                            continue  # revisit
+                    if VERBOSE:  # pragma: no cover
+                        debug("it's a non-ASCII word")
+                elif VERBOSE:  # pragma: no cover
                     debug("it's a single word")
                 cursor += 1
                 continue
@@ -637,7 +638,7 @@ class TextSplitter:
             # terminal-quotes.
             token = token.rstrip("'")
 
-            if len(token) >= 5:
+            if len(token) >= 5 and token.isascii():
                 if token not in self._seen_tokens:
                     print(token, file=self._tokens_file)
                 self._seen_tokens.add(token)
