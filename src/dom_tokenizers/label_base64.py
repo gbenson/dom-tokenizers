@@ -29,13 +29,31 @@ _IS_HEX_RE = re.compile("^[0-9a-fA-F]+$")
 def is_hex(token):
     return bool(_IS_HEX_RE.match(token))
 
-#ENGLISH_WORDS = load_dataset(SOURCE_DATASETS["english_words"], "valid_words")
+_WORDS_BY_RANK = dict(
+    (row["Rank"], row["Word"])
+    for row in load_dataset(
+            SOURCE_DATASETS["english_words"],
+            "sorted_by_frequency"
+    )
+)
+for rank, word in ((8932, "null"), (16351, "nan")):
+    if _WORDS_BY_RANK[rank] is None:
+        _WORDS_BY_RANK[rank] = word
+
+_RANKED_WORDS = dict(
+    (word.lower(), rank)
+    for rank, word in _WORDS_BY_RANK.items()
+)
+
+def is_english_word(token):
+    return token.lower() in _RANKED_WORDS
 
 class Label(Enum):
     DECIMAL_NUMBER = auto()
     LOWERCASE_HEX = auto()
     UPPERCASE_HEX = auto()
     MIXED_CASE_HEX = auto()
+    ENGLISH_WORD = auto()
     UNLABELLED = auto()
 
 FALSE_HEX = {
@@ -59,6 +77,8 @@ def label_for(token: str):
             if token not in FALSE_HEX:
                 return Label.MIXED_CASE_HEX
         # ...fall through...
+    if is_english_word(token):
+        return Label.ENGLISH_WORD
     return Label.UNLABELLED
 
 def main():
