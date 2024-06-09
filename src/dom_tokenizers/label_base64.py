@@ -64,7 +64,10 @@ def label_for(token: str):
 def main():
     bins = defaultdict(int)
     for row in load_dataset(SOURCE_DATASETS["unlabelled_tokens"]):
-        bins[label_for(row["text"])] += 1
+        for token in row["text"].split("'"):
+            if len(token) < 5:
+                continue
+            bins[label_for(token)] += 1
 
     for _, label, num_tokens in sorted(
             (label.value, label, num_tokens)
