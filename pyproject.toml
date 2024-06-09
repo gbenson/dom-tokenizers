@@ -56,6 +56,7 @@ diff-tokenizer = "dom_tokenizers.scripts.diff:main"
 tokenizer-diff = "dom_tokenizers.scripts.diff:main"
 profile-tokenizer = "dom_tokenizers.scripts.profile:main"
 dump-breaking-inputs = "dom_tokenizers.scripts.dump_breaking_inputs:main"
+label-base64  = "dom_tokenizers.label_base64:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]
