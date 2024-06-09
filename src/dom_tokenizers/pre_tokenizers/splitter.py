@@ -587,7 +587,7 @@ class TextSplitter:
             # terminal-quotes.
             token = token.rstrip("'")
 
-            if len(token) >= 4:
+            if len(token) >= 5:
                 if token not in self._seen_tokens:
                     print(token, file=self._tokens_file)
                 self._seen_tokens.add(token)
