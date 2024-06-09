@@ -8,7 +8,8 @@ from datasets import load_dataset as _load_dataset
 
 SOURCE_DATASETS = dict(
     unlabelled_tokens="gbenson/webui-tokens-unlabelled",
-    english_words="Maximax67/English-Valid-Words",
+    english_valid_words="Maximax67/English-Valid-Words",
+    wikipedia_title_words="gbenson/wikipedia-page-title-words",
 )
 
 def load_dataset(path: str, *args, **kwargs):
@@ -38,13 +39,49 @@ FALSE_HEX = {
     "Feb24",
 }
 
-#ENGLISH_WORDS = load_dataset(SOURCE_DATASETS["english_words"], "valid_words")
+_KNOWN_WORDS_CACHE = os.path.expanduser("~/.cache/label_base64.words")
+if os.path.exists(_KNOWN_WORDS_CACHE):
+    with open(_KNOWN_WORDS_CACHE) as fp:
+        _KNOWN_WORDS = set(line.rstrip() for line in fp.readlines())
+else:
+    _KNOWN_WORDS = dict(
+        (row["Rank"], row["Word"])
+        for row in load_dataset(
+                SOURCE_DATASETS["english_valid_words"],
+                "sorted_by_frequency"
+        )
+    )
+    for rank, word in ((8932, "null"), (16351, "nan")):
+        if _KNOWN_WORDS[rank] is None:
+            _KNOWN_WORDS[rank] = word
+
+    _KNOWN_WORDS = set(_KNOWN_WORDS.values())
+    assert len(_KNOWN_WORDS) == 172782
+
+    _KNOWN_WORDS.update(
+        row["text"]
+        for row in load_dataset(SOURCE_DATASETS["wikipedia_title_words"])
+    )
+
+    _four_same_re = re.compile(r"(.)\1\1\1", re.I)
+    _KNOWN_WORDS = {
+        word
+        for word in _KNOWN_WORDS
+        if not _four_same_re.search(word) or word.startswith("yyyymm")
+    }
+    assert all(word == word.lower() for word in _KNOWN_WORDS)
+    with open(_KNOWN_WORDS_CACHE, "w") as fp:
+        fp.writelines(f"{word}\n" for word in sorted(_KNOWN_WORDS))
+
+def is_known_word(token):
+    return token.lower() in _KNOWN_WORDS
 
 class Label(Enum):
     DECIMAL_NUMBER = auto()
     LOWERCASE_HEX = auto()
     UPPERCASE_HEX = auto()
     MIXED_CASE_HEX = auto()
+    KNOWN_WORD = auto()
     UNLABELLED = auto()
 
 def label_for(token: str):
@@ -59,6 +96,8 @@ def label_for(token: str):
             if token not in FALSE_HEX:
                 return Label.MIXED_CASE_HEX
         # ...fall through...
+    if is_known_word(token):
+        return Label.KNOWN_WORD
     return Label.UNLABELLED
 
 def main():
