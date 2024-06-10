@@ -12,12 +12,14 @@ from tokenizers import NormalizedString
 from ..internal import json
 from ..internal.transformers import AutoTokenizer
 from ..pre_tokenizers import DOMSnapshotPreTokenizer
+from .defaults import (
+    DEFAULT_BASE_TOKENIZER,
+    DEFAULT_SPLIT,
+    SEND_BUGS_TO,
+)
 
-DEFAULT_BASE_TOKENIZER = "bert-base-uncased"
-DEFAULT_SPLIT = "train"
 DEFAULT_STATS_FILENAME = f"{__name__.rsplit('.', 1)[-1]}.prof"
 DEFAULT_CACHEDIR = os.path.join("~", ".cache", *(__name__.split(".")))
-SEND_BUGS_TO = "https://github.com/gbenson/dom-tokenizers/issues"
 
 
 def profile_tokenizer(fp, pretokenize_dom):

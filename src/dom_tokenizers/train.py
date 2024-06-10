@@ -12,11 +12,12 @@ from tokenizers.pre_tokenizers import WhitespaceSplit
 from .internal import json
 from .internal.transformers import AutoTokenizer
 from .pre_tokenizers import DOMSnapshotPreTokenizer
-
-DEFAULT_BASE_TOKENIZER = "bert-base-uncased"
-DEFAULT_SPLIT = "train"
-DEFAULT_VOCAB_SIZE = 1024
-SEND_BUGS_TO = "https://github.com/gbenson/dom-tokenizers/issues"
+from .scripts.defaults import (
+    DEFAULT_BASE_TOKENIZER,
+    DEFAULT_SPLIT,
+    DEFAULT_VOCAB_SIZE,
+    SEND_BUGS_TO,
+)
 
 
 def train_tokenizer(

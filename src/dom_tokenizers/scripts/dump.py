@@ -7,10 +7,11 @@ from datasets import load_dataset
 from ..internal import json
 from ..internal.transformers import AutoTokenizer
 from ..pre_tokenizers import DOMSnapshotPreTokenizer
-
-DEFAULT_DATASET = "gbenson/interesting-dom-snapshots"
-DEFAULT_SPLIT = "train"
-SEND_BUGS_TO = "https://github.com/gbenson/dom-tokenizers/issues"
+from .defaults import (
+    DEFAULT_DATASET,
+    DEFAULT_SPLIT,
+    SEND_BUGS_TO,
+)
 
 
 def main():
