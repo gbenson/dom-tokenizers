@@ -49,6 +49,14 @@ _RANKED_WORDS = dict(
 def is_english_word(token):
     return token.lower() in _RANKED_WORDS
 
+_WORDS_BY_LENGTH = defaultdict(set)
+for word in _RANKED_WORDS:
+    if len(word) < 5:
+        continue
+    _WORDS_BY_LENGTH[len(word)].add(word)
+
+_WORD_LENGTHS = list(sorted(_WORDS_BY_LENGTH))
+
 class Label(Enum):
     DECIMAL_NUMBER = auto()
     LOWERCASE_HEX = auto()
