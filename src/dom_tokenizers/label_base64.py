@@ -3,6 +3,7 @@ import re
 
 from collections import defaultdict
 from enum import Enum, auto
+from typing import Optional
 
 from datasets import load_dataset as _load_dataset
 
@@ -32,6 +33,7 @@ def is_hex(token):
 
 FALSE_HEX = {
     "Ada95",
+    "addFace",
     "Decaf377",
     "Ed448",
     "Ed25519",
@@ -84,21 +86,32 @@ class Label(Enum):
     KNOWN_WORD = auto()
     UNLABELLED = auto()
 
-def label_for(token: str):
-    if is_hex(token):
+def label_for(token: str) -> Label:
+    is_hex_token = is_hex(token)
+    if is_hex_token:
         if token.isnumeric():
             return Label.DECIMAL_NUMBER
         if not token.isalpha():
-            if token.islower():
-                return Label.LOWERCASE_HEX
-            if token.isupper():
-                return Label.UPPERCASE_HEX
-            if token not in FALSE_HEX:
-                return Label.MIXED_CASE_HEX
+            label = _label_for_hex(token)
+            if label is not None:
+                return label
         # ...fall through...
     if is_known_word(token):
         return Label.KNOWN_WORD
+    if is_hex_token:
+        label = _label_for_hex(token)
+        if label is not None:
+            return label
     return Label.UNLABELLED
+
+def _label_for_hex(token: str) -> Optional[Label]:
+    if token.islower():
+        return Label.LOWERCASE_HEX
+    if token.isupper():
+        return Label.UPPERCASE_HEX
+    if token not in FALSE_HEX:
+        return Label.MIXED_CASE_HEX
+    return None
 
 def main():
     bins = defaultdict(int)
