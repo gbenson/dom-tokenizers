@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from dom_tokenizers.profile import (
+from dom_tokenizers.scripts.profile import (
     main as profile_tokenizer,
     profile as profile_module,
 )

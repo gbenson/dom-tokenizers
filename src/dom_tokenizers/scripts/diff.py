@@ -3,9 +3,9 @@ import warnings
 from argparse import ArgumentParser
 from difflib import SequenceMatcher
 
-from .internal import json
-from .internal.transformers import AutoTokenizer
-from .pre_tokenizers import DOMSnapshotPreTokenizer
+from ..internal import json
+from ..internal.transformers import AutoTokenizer
+from ..pre_tokenizers import DOMSnapshotPreTokenizer
 
 SEND_BUGS_TO = "https://github.com/gbenson/dom-tokenizers/issues"
 

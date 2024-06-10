@@ -4,9 +4,9 @@ from argparse import ArgumentParser
 
 from datasets import load_dataset
 
-from .internal import json
-from .internal.transformers import AutoTokenizer
-from .pre_tokenizers import DOMSnapshotPreTokenizer
+from ..internal import json
+from ..internal.transformers import AutoTokenizer
+from ..pre_tokenizers import DOMSnapshotPreTokenizer
 
 DEFAULT_DATASET = "gbenson/interesting-dom-snapshots"
 DEFAULT_SPLIT = "train"

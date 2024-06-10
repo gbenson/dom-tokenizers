@@ -9,9 +9,9 @@ from hashlib import sha256
 from datasets import load_dataset
 from tokenizers import NormalizedString
 
-from .internal import json
-from .internal.transformers import AutoTokenizer
-from .pre_tokenizers import DOMSnapshotPreTokenizer
+from ..internal import json
+from ..internal.transformers import AutoTokenizer
+from ..pre_tokenizers import DOMSnapshotPreTokenizer
 
 DEFAULT_BASE_TOKENIZER = "bert-base-uncased"
 DEFAULT_SPLIT = "train"

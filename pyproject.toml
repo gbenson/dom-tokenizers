@@ -51,10 +51,10 @@ train = [
 
 [project.scripts]
 train-tokenizer = "dom_tokenizers.train:main"
-dump-tokenizations = "dom_tokenizers.dump:main"
-diff-tokenizer = "dom_tokenizers.diff:main"
-tokenizer-diff = "dom_tokenizers.diff:main"
-profile-tokenizer = "dom_tokenizers.profile:main"
+dump-tokenizations = "dom_tokenizers.scripts.dump:main"
+diff-tokenizer = "dom_tokenizers.scripts.diff:main"
+tokenizer-diff = "dom_tokenizers.scripts.diff:main"
+profile-tokenizer = "dom_tokenizers.scripts.profile:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]
