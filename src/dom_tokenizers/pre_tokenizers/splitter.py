@@ -202,7 +202,7 @@ class TextSplitter:
                 continue
 
             # Split on "_" (have to do this b/c "\w" matches it)
-            new_splits = curr.split("_")
+            new_splits = curr.split("_", maxsplit=1)
             if len(new_splits) > 1:
                 if VERBOSE:  # pragma: no cover
                     debug("it's stuff with underscores")
@@ -310,9 +310,13 @@ class TextSplitter:
             # Terminal backslash
             splits.pop(cursor)
             return cursor
-        else:  # curr == "\\"
-            curr = splits[cursor_limit]
+        elif (curr := splits[cursor_limit]):
+            # Regular escape
             cursor_limit += 1
+        else:
+            # Backslash followed by something that's been split away?
+            splits[cursor] = SPLIT
+            return cursor_limit
 
         # Store what we want at `splits[cursor:cursor_limit]` in `result`.
         match curr[0]:

@@ -1,6 +1,6 @@
 import pytest
 
-from dom_tokenizers.pre_tokenizers.splitter import TextSplitter
+from dom_tokenizers.pre_tokenizers.splitter import TextSplitter, SPLIT
 
 
 @pytest.mark.parametrize(
@@ -73,6 +73,9 @@ def test_first_split_re(text, expect_splits):
      (r"hello\world", ["hello", "world"]),  # not valid => not handled
      ("hello\\", ["hello"]),
      ("\\hello", ["hello"]),
+     ("_ \\_", []),
+     ("_ \\_a", ["a"]),
+     ("_ \\_ b", ["b"]),
 
      # Javascript unicode escapes
      (r"hello\u0020world", ["hello", "world"]),
@@ -199,6 +202,20 @@ def test_prefixed_hex(text, expect_tokens):
     """Ensure prefixed hex constants are recognized and split.
     """
     assert list(TextSplitter().split(text)) == expect_tokens
+
+
+def test_sub_js_escape_crasher():
+    """Ensure `_sub_js_escape()` doesn't crash when fed `["\\", ""]`
+
+    `_sub_js_escape()` used to raise an `IndexError` if fed `["\\", ""]`.
+    That's now been fixed, but the error that caused it to be fed that
+    sequence has also been fixed, meaning the code this testcase flexes
+    wasn't being tested by any of the regular `TextSplitter().split()`
+    tests, hence this testcase to flex it specifically.
+    """
+    splits = ["\\", ""]
+    assert TextSplitter()._sub_js_escape(splits, 0) == 1
+    assert splits == [SPLIT, ""]
 
 
 @pytest.mark.parametrize(
