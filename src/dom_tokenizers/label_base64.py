@@ -87,11 +87,42 @@ def label_for(token: str) -> Label:
             if label is not None:
                 return label
         # ...fall through...
+    #if >100: almost all are base64
+    # (24381 words!)
+    # and 102968 30<len<100 words
+    #
+    #573J8100L5093461D49F0C18L583853L509389QL518325QQP0G00G0Q1EA52323000001010000G0P
+    #573J8100L5093461D49F0C18L583854L509389QL514841QQP0G00G0Q1EA52323000001010000G0P
+    #573J8100L5093461D49F0C18L714582L714580QL514838QQP0G00G0Q1EA52050000001010000G0P
+    #
+    #addItemToCartAmountEnteredForIsNotValidOrMissingDoNotIncludeWhenEnteringAmountA
+    #addProductToCartAmountEnteredForNotValidOrMissingDoNotIncludeWhenEnteringAmount
+    #addToCartHelperAmountEnteredForNotValidDoNotIncludeWhenEnteringAmountAmountMust
+    #
+    #com/senatorchriscoons/posts/pfbid02pXNWyxJuZmWJDqrU7CCMdEtjUCrgw8Pj7wYC8qRuRHcH
+    #com/senatorchriscoons/posts/pfbid02uAnxMwEuraKxWtggBdMDnQHKZqNrqeH2HttBaPN6YUvv
+    #com/senatorchriscoons/posts/pfbid02uYXTYGS4bnHJu86J8RHeRGJPpi3LjvLb7H63z4VyUGU1
+    #com/static/56122b94e4b01402b90cce28/t/5612c0e8e4b0e1ea75381ffa/1444069613406/Me
+    #com/static/5bf04054e74940effe961412/5bf044fe4ae237221b0dc997/62036c3ad02e511569
+    #com/static/sitecss/53821f30e4b07bcdae103594/112/5eb4907835be1011d8740950/5eb490
+    #com/static/sitecss/5a74bb4acd39c357ee3d714a/133/63a3a196f538ee2f45e104f5/63a3a1
+    #com/transform/v3/eyJpdSI6Ijg1Y2E5YjAwYzY3YjlhMjc0ZmY3MzI0MTJjMmMzNzVkMjk1NTM3Yz
+    #com/transform/v3/eyJpdSI6IjlhMTY1NzAwNGRkZmFjM2FlODI0OTEwMGE3ZDYwMTNkMzEyMzQyYj
+    #com/transform/v3/eyJpdSI6IjliZjM3ZDk5YTYwYzA4N2NjMmVkYzljODk4ZmYzNTNiY2ZlNTlmMD
+    #com/transform/v3/eyJpdSI6IjMwYjNjYjRjYjM3Mjk3ODcyZTE0NmM0ZTcwNjBiZDgyMDhhZWJiMj
+    #com/transform/v3/eyJpdSI6IjQ3MzlhMTM2Yzc1OGRlZTE3NGYyYjU3YTcxOTU1ZjliNDllOTJiNW
+    #com/transform/v3/eyJpdSI6IjRmNjExYTQxOWNiNDBkMWVhNTU4YWQ4YWFhYTg0MjAyMDk1NzkxNm
+    #com/transform/v3/eyJpdSI6IjUzNjViY2U3YTVlMTE1ODA2MzE1NDEyODE2YzI4Y2U2ZTU0MmZlMD
+    #com/transform/v3/eyJpdSI6IjVhNzY4ZGNmNTk0Nzc1ZTg4ZDQ3OTAyYzU5YzQ1ODBmNTZiZGMxOD
+    #com/transform/v3/eyJpdSI6ImExOWEwN2QzODA1ZGU4ZWNiMGJlMWEwNmM5ZmVjM2Q1NGNjYTFkMT
+    #com/transform/v3/eyJpdSI6ImU0OWExNzY2ODQxYjE0MzgwMzg1ZWE2OTY2YzE5YWYyODU5NjdmYT
+    #com/v1/integrations/reodotdev/installations/81e38c589f33c88ac5a76a9ed22fd446ab8
+    #
+    #DID300000005https3000000b008db8e0f2bab200029e1f1d62028a8dd4fe82affaa6aca08273ca
     if is_english_word(token):
         return Label.ENGLISH_WORD
     if is_hex_token:
         label = _label_for_hex(token)
-        print(f"{label.name if label else str(label):>14}", token, file=_log)
         if label is not None:
             return label
     return Label.UNLABELLED
@@ -111,7 +142,13 @@ def main():
         for token in row["text"].split("'"):
             if len(token) < 5:
                 continue
-            bins[label_for(token)] += 1
+            label = label_for(token)
+            bins[label] += 1
+            if label != Label.UNLABELLED:
+                continue
+            if len(token) < 30 or len(token) >= 100:
+                continue
+            print(token[:80], file=_log)
 
     for _, label, num_tokens in sorted(
             (label.value, label, num_tokens)
@@ -133,3 +170,4 @@ def main():
 #
 # Possible augmentation:
 # - some MIXED_CASE_HEX are concatenated single-case hex: worth splitting?
+# - Alter base64 lengths so they're not mostly multiples of 4
