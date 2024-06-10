@@ -67,6 +67,8 @@ FALSE_HEX = {
     "Feb24",
 }
 
+_log = open("unlabelled-words.log", "w")
+
 def label_for(token: str) -> Label:
     is_hex_token = is_hex(token)
     if is_hex_token:
@@ -81,6 +83,7 @@ def label_for(token: str) -> Label:
         return Label.ENGLISH_WORD
     if is_hex_token:
         label = _label_for_hex(token)
+        print(f"{label.name if label else str(label):>14}", token, file=_log)
         if label is not None:
             return label
     return Label.UNLABELLED
@@ -106,6 +109,8 @@ def main():
             (label.value, label, num_tokens)
             for label, num_tokens in bins.items()):
         print(f"{num_tokens:>8}: {label.name}")
+
+    _log.close()
 
 # NOTES:
 # - not all source tokens are valid base64
