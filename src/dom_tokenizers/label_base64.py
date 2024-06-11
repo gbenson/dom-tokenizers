@@ -139,12 +139,14 @@ class Label(Enum):
     UPPERCASE_HEX = auto()
     MIXED_CASE_HEX = auto()
     KNOWN_WORD = auto()
+    NOT_BASE64 = auto()
     BASE64_ENCODED_GIF = auto()
     BASE64_ENCODED_JPEG = auto()
     BASE64_ENCODED_PNG = auto()
     BASE64_ENCODED_SVG = auto()
     BASE64_ENCODED_WEBP = auto()
     BASE64_ENCODED_WOFF = auto()
+    BASE64_ENCODED_DATA = auto()
     BASE64_ENCODED_UTF8 = auto()
     BASE64_ENCODED_JSON_SANDWICH = auto()
     UNLABELLED = auto()
@@ -207,7 +209,15 @@ def label_for(token: str) -> Label:
             return Label.BASE64_ENCODED_UTF8
         except json.JSONDecodeError:
             pass
+        assert len(token) <= 20
         # ...fall through...
+    if len(token) >= 128:
+        if token.count("x") == len(token):
+            return Label.NOT_BASE64
+        if token.startswith("101110101010102"):
+            return Label.NOT_BASE64
+        # All eyeballed, all keysmash
+        return Label.BASE64_ENCODED_DATA
     return Label.UNLABELLED
 
 def _label_for_hex(token: str) -> Optional[Label]:
@@ -255,6 +265,8 @@ def main():
 #   layout made decoding as valid UTF-8 more likely than random
 #   chance.
 # - "666666666666666666em" (decodes to 5-character CJK!)
+# - the one that's ~1600 "x"s
+# - 1011101010101020...300000006/TSPD/300000008TSPD (=long but not base64)
 #
 # Possible augmentation:
 # - some MIXED_CASE_HEX are concatenated single-case hex: worth splitting?
