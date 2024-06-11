@@ -1,3 +1,4 @@
+import json
 import os
 import re
 
@@ -115,6 +116,23 @@ _MAGIC_BASE64 = dict(
     for magic, filetype in _MAGIC_BYTES.items()
 )
 
+def _forced_b64decode(encoded, **kwargs):
+    extra = "xA=="
+    if (n := len(encoded) % 4):
+        encoded += extra[n:]
+    return b64decode(encoded, **kwargs)
+
+def _try_decode(data, *args, **kwargs):
+    try:
+        return data.decode(*args, **kwargs)
+    except UnicodeDecodeError:
+        return None
+
+FALSE_BASE64_ENCODED_UTF8 = {
+    "666666666666666666em", # decodes to 5-character CJK!
+    "InstanceEndEditable",  # => "{-jw\x1e\x12wDv+ZnW'
+}
+
 class Label(Enum):
     DECIMAL_NUMBER = auto()
     LOWERCASE_HEX = auto()
@@ -127,6 +145,7 @@ class Label(Enum):
     BASE64_ENCODED_SVG = auto()
     BASE64_ENCODED_WEBP = auto()
     BASE64_ENCODED_WOFF = auto()
+    BASE64_ENCODED_UTF8 = auto()
     BASE64_ENCODED_JSON_SANDWICH = auto()
     UNLABELLED = auto()
 
@@ -149,6 +168,46 @@ def label_for(token: str) -> Label:
         label = _label_for_hex(token)
         if label is not None:
             return label
+    decoded_data = _forced_b64decode(token)
+    decoded_utf8 = _try_decode(decoded_data, "utf-8")
+    if decoded_utf8:
+        # The probability that a random sequence of N bytes will be valid
+        # UTF-8 approximates Pn ~ 0.87739479563671 * 0.56471777839234**N.
+        # -- https://math.stackexchange.com/a/751707
+        # That's <1% at 8 bytes, <0.1% at 12, <0.01% at 16, <0.001% at 20.
+        #
+        # Except, beware, "random" binary data encoded as base64 might be
+        # structured in such a way that it decodes as valid UTF-8.  The
+        # obvious example is some bytes which all have their MSB unset.
+        # XXX is random *uppercase* text more likely to decode this way?
+        # XXX filter on isprintable() ?
+        if len(decoded_utf8) >= 12 and token not in FALSE_BASE64_ENCODED_UTF8:
+            # I eyeballed all with 12 <= length < 20.  A lot of the decoded
+            # utf-8 was garbage, but only the single false positive looked
+            # to be anything other than keysmash, which is kind of what we're
+            # trying to identify here so I think that's ok.
+            return Label.BASE64_ENCODED_UTF8
+        if len(token) >= 20 and token not in FALSE_BASE64_ENCODED_UTF8:
+            # Actually it's len(token) that's the N in Pn above, but I've
+            # eyeballed all those tokens now so I'm keeping the above code!
+            # Much of the above comments still apply: a lot of the decoded
+            # utf-8 looks like garbage but only one token in this length
+            # range didn't look like keysmash ("666666666666666666em")
+            return Label.BASE64_ENCODED_UTF8
+        if len(token) >= 18 and token not in FALSE_BASE64_ENCODED_UTF8:
+            # I eyeballed these too, the only non-keysmash token in this
+            # range is the one with len(decoded_utf8) >= 12.  There look
+            # to be a fair few where token is multiple concatenated words
+            # below that threshold so that's really the limit I think.
+            return Label.BASE64_ENCODED_UTF8
+        if is_known_word(decoded_utf8):
+            return Label.BASE64_ENCODED_UTF8
+        try:
+            _ = json.loads(decoded_utf8)
+            return Label.BASE64_ENCODED_UTF8
+        except json.JSONDecodeError:
+            pass
+        # ...fall through...
     return Label.UNLABELLED
 
 def _label_for_hex(token: str) -> Optional[Label]:
@@ -171,7 +230,10 @@ def main():
     for _, label, num_tokens in sorted(
             (label.value, label, num_tokens)
             for label, num_tokens in bins.items()):
-        print(f"{num_tokens:>8}: {label.name}")
+        line = f"{num_tokens:>8}: {label.name}"
+        if label is Label.UNLABELLED:
+            line = f"{line} ({num_tokens / 11931.96:.1f}%)"
+        print(line)
 
 # NOTES:
 # - not all source tokens are valid base64
@@ -179,10 +241,20 @@ def main():
 #
 # make a training set with the same distribution of lengths?
 # (with a each length bin having an equal number of b64/not b64?)
+# - or, make the distribution flat with regards to length, so it
+#   can't learn length as a discriminator
+# - don't even have all base64 be a multiple of four bytes long
+# - and def don't leave any equals signs in there!
 #
 # Things it'll be interesting to see what a classifier makes of:
 # - FALSE_HEX
 # - Label.MIXED_CASE_HEX
+# - Tokens like CABEIABQAFAMBEQACEQEDEQH, CABEIABUAFQMBEQACEQEDEQH,
+#   ACwAAAAAAQABAAACADs.
+#   decode as valid UTF-8, but are more likely binary data whose
+#   layout made decoding as valid UTF-8 more likely than random
+#   chance.
+# - "666666666666666666em" (decodes to 5-character CJK!)
 #
 # Possible augmentation:
 # - some MIXED_CASE_HEX are concatenated single-case hex: worth splitting?
