@@ -1,6 +1,7 @@
 import os
 import re
 
+from base64 import b64decode, b64encode
 from collections import defaultdict
 from enum import Enum, auto
 from typing import Optional
@@ -78,15 +79,61 @@ else:
 def is_known_word(token):
     return token.lower() in _KNOWN_WORDS
 
+class FileType(Enum):
+    GIF = b"GIF8"
+    JFIF = b"\xff\xd8\xff\xe0"
+    JPEG = b"\xff\xd8\xff\xdb"
+    JSON_SANDWICH = b"\x00\x1d\xda|"  # 9binary + JSON + 8binary
+    PNG = b"\x89PNG"
+    RIFF = b"RIFF"
+    SVG = b"<svg"
+    WEBP = None
+    WOFF = b"wOFF"
+    WOF2 = b"wOF2"
+
+    @classmethod
+    def from_base64_encoded(cls, encoded) -> Optional["FileType"]:
+        filetype = _MAGIC_BASE64.get(encoded[:5])
+        match filetype:
+            case cls.JFIF:
+                return cls.JPEG
+            case cls.WOF2:
+                return cls.WOFF
+            case other if other != cls.RIFF:
+                return filetype
+        subtype = b64decode(encoded[:16])[-4:].decode("ascii")
+        return getattr(cls, subtype, filetype)
+
+_MAGIC_BYTES = dict(
+    (filetype.value, filetype)
+    for filetype in FileType
+    if filetype.value is not None
+)
+
+_MAGIC_BASE64 = dict(
+    (b64encode(magic)[:5].decode("ascii"), filetype)
+    for magic, filetype in _MAGIC_BYTES.items()
+)
+
 class Label(Enum):
     DECIMAL_NUMBER = auto()
     LOWERCASE_HEX = auto()
     UPPERCASE_HEX = auto()
     MIXED_CASE_HEX = auto()
     KNOWN_WORD = auto()
+    BASE64_ENCODED_GIF = auto()
+    BASE64_ENCODED_JPEG = auto()
+    BASE64_ENCODED_PNG = auto()
+    BASE64_ENCODED_SVG = auto()
+    BASE64_ENCODED_WEBP = auto()
+    BASE64_ENCODED_WOFF = auto()
+    BASE64_ENCODED_JSON_SANDWICH = auto()
     UNLABELLED = auto()
 
 def label_for(token: str) -> Label:
+    filetype = FileType.from_base64_encoded(token)
+    if filetype is not None:
+        return getattr(Label, f"BASE64_ENCODED_{filetype.name}")
     is_hex_token = is_hex(token)
     if is_hex_token:
         if token.isnumeric():
