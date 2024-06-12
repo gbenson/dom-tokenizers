@@ -35,7 +35,6 @@ def is_hex(token):
 
 FALSE_HEX = {
     "Ada95",
-    "addFace",
     "Decaf377",
     "Ed448",
     "Ed25519",
@@ -59,8 +58,14 @@ else:
         if _KNOWN_WORDS[rank] is None:
             _KNOWN_WORDS[rank] = word
 
-    _KNOWN_WORDS = set(_KNOWN_WORDS.values())
-    assert len(_KNOWN_WORDS) == 172782
+    _KNOWN_WORDS = set(
+        word
+        for rank, word in _KNOWN_WORDS.items()
+        if (len(word) > 3
+            or (len(word) == 3 and rank < 20910)
+            or (len(word) == 2 and rank < 10172)
+            or (len(word) == 1 and rank < 91))
+    )
 
     _KNOWN_WORDS.update(
         row["text"]
@@ -77,8 +82,64 @@ else:
     with open(_KNOWN_WORDS_CACHE, "w") as fp:
         fp.writelines(f"{word}\n" for word in sorted(_KNOWN_WORDS))
 
+_KNOWN_WORDS.update((
+    "bg", "fb", "fn", "js", "px", "ui",
+
+    "amt", "btn", "cdn", "css", "faq", "gif", "hex", "ids", "img", "ios",
+    "jsp", "moz", "msg", "mui", "nav", "obj", "php", "pix", "rgb", "rss",
+    "sdk", "seo", "sso", "svg", "txt", "uid", "uri", "url", "utf", "www",
+    "xml",
+
+    "creds", "refetch",
+))
+
 def is_known_word(token):
     return token.lower() in _KNOWN_WORDS
+
+_CAMEL_WORD_RE = re.compile(r"""
+        (?: ^[a-z]+
+           | [A-Z](?:[a-z]+|[A-Z]*)
+        )
+        [0-9]*(?=[A-Z]|$)""", re.X)
+
+def camel_split(text):
+    words = _CAMEL_WORD_RE.findall(text)
+    if len(words) < 2:
+        return None
+    if "".join(words) != text:
+        return None
+    word_lengths = [len(word) for word in words]
+    if max(word_lengths) <= 2:
+        return None
+    return words
+
+_CAMEL_CUTOFF = 80  # junk very suddenly appears here!
+# (actually not surprising: 80 = 1 + 4, so, 4smash + 1random letter)
+
+def is_camelcase(token):
+    words = camel_split(token)
+    if not words:
+        return False
+
+    deindexed_words = [word.rstrip("0123456789") for word in words]
+    word_is_known = [is_known_word(word) for word in deindexed_words]
+    if not any(word_is_known):
+        return False
+
+    deindexed_lengths = list(map(len, deindexed_words))
+    known_deindexed_lengths = [
+        deindexed_length
+        for deindexed_length, is_known in zip(
+                deindexed_lengths, word_is_known)
+        if is_known
+    ]
+    if max(known_deindexed_lengths) < 4:
+        return False
+    known_di = sum(known_deindexed_lengths)
+    total_di = sum(deindexed_lengths)
+
+    ratio = round(100 * known_di / total_di)
+    return ratio > _CAMEL_CUTOFF
 
 class FileType(Enum):
     GIF = b"GIF8"
@@ -130,7 +191,6 @@ def _try_decode(data, *args, **kwargs):
 
 FALSE_BASE64_ENCODED_UTF8 = {
     "666666666666666666em", # decodes to 5-character CJK!
-    "InstanceEndEditable",  # => "{-jw\x1e\x12wDv+ZnW'
 }
 
 class Label(Enum):
@@ -139,6 +199,7 @@ class Label(Enum):
     UPPERCASE_HEX = auto()
     MIXED_CASE_HEX = auto()
     KNOWN_WORD = auto()
+    CAMELCASE = auto()
     NOT_BASE64 = auto()
     BASE64_ENCODED_GIF = auto()
     BASE64_ENCODED_JPEG = auto()
@@ -166,6 +227,8 @@ def label_for(token: str) -> Label:
         # ...fall through...
     if is_known_word(token):
         return Label.KNOWN_WORD
+    if is_camelcase(token):
+        return Label.CAMELCASE
     if is_hex_token:
         label = _label_for_hex(token)
         if label is not None:
@@ -229,13 +292,26 @@ def _label_for_hex(token: str) -> Optional[Label]:
         return Label.MIXED_CASE_HEX
     return None
 
+# XXX look into these
+_SPLITTER_FAIL_RE = re.compile(r"^(?:x|u00)(?:2[267]|3c|64)", re.I)
+
 def main():
     bins = defaultdict(int)
     for row in load_dataset(SOURCE_DATASETS["unlabelled_tokens"]):
-        for token in row["text"].split("'"):
+        text = row["text"]
+        if len(text) < 5:
+            continue
+        while (match := _SPLITTER_FAIL_RE.match(text)):
+            text = text[len(match.group(0)):]
+            if len(text) < 5:
+                break
+        if len(text) < 5:
+            continue
+        for token in text.split("'"):
             if len(token) < 5:
                 continue
-            bins[label_for(token)] += 1
+            label = label_for(token)
+            bins[label] += 1
 
     for _, label, num_tokens in sorted(
             (label.value, label, num_tokens)
@@ -256,6 +332,9 @@ def main():
 # - don't even have all base64 be a multiple of four bytes long
 # - and def don't leave any equals signs in there!
 #
+# rather than the by-file-type taxonomy, maybe divide base64-encoded
+# tokens into compressible and not?
+#
 # Things it'll be interesting to see what a classifier makes of:
 # - FALSE_HEX
 # - Label.MIXED_CASE_HEX
@@ -270,3 +349,17 @@ def main():
 #
 # Possible augmentation:
 # - some MIXED_CASE_HEX are concatenated single-case hex: worth splitting?
+#
+# Camel misses:
+# - 79 lander Form EA839 C68 BFBB40 F39 BBE13007144526 B Check ID
+# - 79 lander Form EA839 C68 BFBB40 F39 BBE13007144526 BID
+# - 79 lander Form334958933 FA345419 F1 AB2 C4710 E4780 Check ID
+# - 79 lander Form41 D3 BB041 B64473 BA14 ADA28 D24730 ACID
+# - 79 lander Form645 D43 EF5 E704650 BC6 BADB42122 B15 B Check ID
+# - 79 lander Form645 D43 EF5 E704650 BC6 BADB42122 B15 BID
+# - 79 lander Form6461841 CE328493186 AFA16 B2059412 B Check ID
+# - 79 lander Form6461841 CE328493186 AFA16 B2059412 BID
+# - 79 lander Form77 D170683 D654 BEE8 C3 D13 CDAB8880 D0 ID
+# - 79 lander Form94 AFBF34588344 D9 B42 F780 EB6 A16 DA4 ID
+# - 79 lander Func018 D349694 CA4 D30 B8 CD3 A7 D89 C45131 Func
+# - 79 lander Func33601175 B19 B4 C99 BD5 CE9 A84 B70 C752 Func
