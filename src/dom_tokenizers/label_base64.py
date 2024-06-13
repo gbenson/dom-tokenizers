@@ -116,6 +116,9 @@ def camel_split(text):
 _CAMEL_CUTOFF = 80  # junk very suddenly appears here!
 # (actually not surprising: 80 = 1 + 4, so, 4smash + 1random letter)
 
+_camel_pieces = defaultdict(set)
+_camel_detail = {}
+
 def is_camelcase(token):
     words = camel_split(token)
     if not words:
@@ -139,7 +142,20 @@ def is_camelcase(token):
     total_di = sum(deindexed_lengths)
 
     ratio = round(100 * known_di / total_di)
-    return ratio > _CAMEL_CUTOFF
+    if ratio <= _CAMEL_CUTOFF:
+        return False
+
+    for word, is_known in zip(deindexed_words, word_is_known):
+        if not is_known:
+            continue
+        _camel_pieces[word].add(token)
+    _camel_detail[token] = [
+        deindexed_words,
+        list(map(int, word_is_known)),
+        known_di, total_di, ratio,
+    ]
+
+    return True
 
 class FileType(Enum):
     GIF = b"GIF8"
@@ -324,6 +340,14 @@ def main():
         if label is Label.UNLABELLED:
             line = f"{line} ({num_tokens / 11931.96:.1f}%)"
         print(line)
+
+    with open("camel-details.tsv", "w") as fp:
+        for word, tokens in sorted(_camel_pieces.items()):
+            if len(tokens) != 1:
+                continue
+            token = list(tokens)[0]
+            detail = _camel_detail[token]
+            print("\t".join([token] + list(map(str, detail))), file=fp)
 
 # NOTES:
 # - not all source tokens are valid base64
