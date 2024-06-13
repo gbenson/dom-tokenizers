@@ -281,6 +281,9 @@ def label_for(token: str) -> Label:
             return Label.NOT_BASE64
         # All eyeballed, all keysmash
         return Label.BASE64_ENCODED_DATA
+    if token.startswith("landerForm"):
+        _ = int(token[10:42], 16)
+        return Label.CAMELCASE  # ish
     return Label.UNLABELLED
 
 def _label_for_hex(token: str) -> Optional[Label]:
@@ -349,17 +352,3 @@ def main():
 #
 # Possible augmentation:
 # - some MIXED_CASE_HEX are concatenated single-case hex: worth splitting?
-#
-# Camel misses:
-# - 79 lander Form EA839 C68 BFBB40 F39 BBE13007144526 B Check ID
-# - 79 lander Form EA839 C68 BFBB40 F39 BBE13007144526 BID
-# - 79 lander Form334958933 FA345419 F1 AB2 C4710 E4780 Check ID
-# - 79 lander Form41 D3 BB041 B64473 BA14 ADA28 D24730 ACID
-# - 79 lander Form645 D43 EF5 E704650 BC6 BADB42122 B15 B Check ID
-# - 79 lander Form645 D43 EF5 E704650 BC6 BADB42122 B15 BID
-# - 79 lander Form6461841 CE328493186 AFA16 B2059412 B Check ID
-# - 79 lander Form6461841 CE328493186 AFA16 B2059412 BID
-# - 79 lander Form77 D170683 D654 BEE8 C3 D13 CDAB8880 D0 ID
-# - 79 lander Form94 AFBF34588344 D9 B42 F780 EB6 A16 DA4 ID
-# - 79 lander Func018 D349694 CA4 D30 B8 CD3 A7 D89 C45131 Func
-# - 79 lander Func33601175 B19 B4 C99 BD5 CE9 A84 B70 C752 Func
