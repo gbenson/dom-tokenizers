@@ -1,4 +1,3 @@
-import atexit
 import logging
 import re
 
@@ -11,6 +10,7 @@ from urllib.parse import unquote
 
 import magic
 
+from datasets import load_dataset
 from unidecode import unidecode
 
 from ..internal import json
@@ -58,6 +58,10 @@ def base64_matcher(min_encoded_len=24):
 
 
 class FalseBase64Error(RuntimeError):
+    pass
+
+
+class FoundToken(RuntimeError):
     pass
 
 
@@ -566,9 +570,12 @@ class TextSplitter:
             raise FalseBase64Error("text")
         return [self.base64_token]
 
-    _seen_tokens = set()
-    _tokens_file = open("unique-tokens", "w")
-    atexit.register(_tokens_file.close)
+    _tokens_to_check = {
+        row["token"]
+        for row in load_dataset(
+                "csv", sep="\t", data_files="camel-details.tsv")["train"]
+        if row["is_flagged"]
+    }
 
     def _postprocess(self, tokens: Iterable[str]) -> Iterable[str]:
         for token in tokens:
@@ -583,10 +590,8 @@ class TextSplitter:
             # terminal-quotes.
             token = token.rstrip("'")
 
-            if len(token) >= 5 and token.isascii():
-                if token not in self._seen_tokens:
-                    print(token, file=self._tokens_file)
-                self._seen_tokens.add(token)
+            if token in self._tokens_to_check:
+                raise FoundToken(token)
 
             if self.HEX_RE.match(token):
                 yield self.long_token
