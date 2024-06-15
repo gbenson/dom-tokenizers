@@ -110,4 +110,6 @@ GARBAGE_WORDS = {
     "crysp", "datko", "eduke", "gehaz", "gukje", "gustu", "illam",
     "norrl", "ognia", "ozker", "rahum", "soffa", "ujman", "ulupo",
     "yogav",
+
+    "ebis", "aure", "pas", "blico", "bcanka", "fianc", "lim",
 }
