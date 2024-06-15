@@ -9,6 +9,9 @@ from typing import Optional
 
 from datasets import load_dataset as _load_dataset
 
+from .base64_labels import Label, KNOWN_LABELS
+from .base64_words import GARBAGE_WORDS, MIXED_CASE_WORDS
+
 SOURCE_DATASETS = dict(
     unlabelled_tokens="gbenson/webui-tokens-unlabelled",
     english_valid_words="Maximax67/English-Valid-Words",
@@ -32,15 +35,6 @@ _IS_HEX_RE = re.compile("^[0-9a-fA-F]+$")
 
 def is_hex(token):
     return bool(_IS_HEX_RE.match(token))
-
-FALSE_HEX = {
-    "Ada95",
-    "Decaf377",
-    "Ed448",
-    "Ed25519",
-    "Feb2019",
-    "Feb24",
-}
 
 _KNOWN_WORDS_CACHE = os.path.expanduser("~/.cache/label_base64.words")
 if os.path.exists(_KNOWN_WORDS_CACHE):
@@ -82,6 +76,8 @@ else:
     with open(_KNOWN_WORDS_CACHE, "w") as fp:
         fp.writelines(f"{word}\n" for word in sorted(_KNOWN_WORDS))
 
+_KNOWN_WORDS.difference_update(GARBAGE_WORDS)
+
 _KNOWN_WORDS.update((
     "bg", "fb", "fn", "js", "px", "ui",
 
@@ -90,11 +86,33 @@ _KNOWN_WORDS.update((
     "sdk", "seo", "sso", "svg", "txt", "uid", "uri", "url", "utf", "www",
     "xml",
 
-    "creds", "refetch",
+    "creds", "refetch", "ccbysa",
+
+    "aarch64", "bzip2", "ipv4", "ipv6", "oauth2", "xfree86",
 ))
 
-def is_known_word(token):
-    return token.lower() in _KNOWN_WORDS
+def is_known_word(token, *, allow_numeric_suffix=False):
+    candidate = token.lower()
+    if candidate in _KNOWN_WORDS:
+        return True
+    if not allow_numeric_suffix:
+        return False
+    candidate = candidate.rstrip("0123456789")
+    if candidate not in _KNOWN_WORDS:
+        return False
+    cased_candidate = token[:len(candidate)]
+    # Be selective about case when we're comparing deindexed.
+    if cased_candidate in MIXED_CASE_WORDS:
+        return True
+    if cased_candidate.isupper() or cased_candidate.islower():
+        return True
+    if cased_candidate == candidate.title():
+        return True
+    if cased_candidate[-1] == "v" and (
+            cased_candidate[:-1].isupper() and
+            int(token[len(candidate):]) in range(1, 11)):
+        return True
+    return False
 
 _CAMEL_WORD_RE = re.compile(r"""
         (?: ^[a-z]+
@@ -193,46 +211,31 @@ FALSE_BASE64_ENCODED_UTF8 = {
     "666666666666666666em", # decodes to 5-character CJK!
 }
 
-class Label(Enum):
-    DECIMAL_NUMBER = auto()
-    LOWERCASE_HEX = auto()
-    UPPERCASE_HEX = auto()
-    MIXED_CASE_HEX = auto()
-    KNOWN_WORD = auto()
-    CAMELCASE = auto()
-    NOT_BASE64 = auto()
-    BASE64_ENCODED_GIF = auto()
-    BASE64_ENCODED_JPEG = auto()
-    BASE64_ENCODED_PNG = auto()
-    BASE64_ENCODED_SVG = auto()
-    BASE64_ENCODED_WEBP = auto()
-    BASE64_ENCODED_WOFF = auto()
-    BASE64_ENCODED_DATA = auto()
-    BASE64_ENCODED_UTF8 = auto()
-    BASE64_ENCODED_JSON_SANDWICH = auto()
-    UNLABELLED = auto()
-
 def label_for(token: str) -> Label:
+    label = KNOWN_LABELS.get(token)
+    if label is not None:
+        return label
+
     filetype = FileType.from_base64_encoded(token)
     if filetype is not None:
         return getattr(Label, f"BASE64_ENCODED_{filetype.name}")
+
     is_hex_token = is_hex(token)
     if is_hex_token:
         if token.isnumeric():
             return Label.DECIMAL_NUMBER
         if not token.isalpha():
-            label = _label_for_hex(token)
-            if label is not None:
-                return label
+            return _label_for_hex(token)
         # ...fall through...
-    if is_known_word(token):
+
+    if is_known_word(token, allow_numeric_suffix=True):
         return Label.KNOWN_WORD
     if is_camelcase(token):
         return Label.CAMELCASE
+
     if is_hex_token:
-        label = _label_for_hex(token)
-        if label is not None:
-            return label
+        return _label_for_hex(token)
+
     decoded_data = _forced_b64decode(token)
     decoded_utf8 = _try_decode(decoded_data, "utf-8")
     if decoded_utf8:
@@ -265,7 +268,7 @@ def label_for(token: str) -> Label:
             # to be a fair few where token is multiple concatenated words
             # below that threshold so that's really the limit I think.
             return Label.BASE64_ENCODED_UTF8
-        if is_known_word(decoded_utf8):
+        if is_known_word(decoded_utf8, allow_numeric_suffix=True):
             return Label.BASE64_ENCODED_UTF8
         try:
             _ = json.loads(decoded_utf8)
@@ -291,9 +294,7 @@ def _label_for_hex(token: str) -> Optional[Label]:
         return Label.LOWERCASE_HEX
     if token.isupper():
         return Label.UPPERCASE_HEX
-    if token not in FALSE_HEX:
-        return Label.MIXED_CASE_HEX
-    return None
+    return Label.MIXED_CASE_HEX
 
 # XXX look into these
 _SPLITTER_FAIL_RE = re.compile(r"^(?:x|u00)(?:2[267]|3c|64)", re.I)
@@ -339,7 +340,6 @@ def main():
 # tokens into compressible and not?
 #
 # Things it'll be interesting to see what a classifier makes of:
-# - FALSE_HEX
 # - Label.MIXED_CASE_HEX
 # - Tokens like CABEIABQAFAMBEQACEQEDEQH, CABEIABUAFQMBEQACEQEDEQH,
 #   ACwAAAAAAQABAAACADs.
