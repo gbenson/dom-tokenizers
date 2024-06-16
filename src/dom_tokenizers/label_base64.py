@@ -10,6 +10,7 @@ from typing import Optional
 from datasets import load_dataset as _load_dataset
 
 from .base64_labels import Label, KNOWN_LABELS
+from .base64_skew import base64_probability
 from .base64_words import GARBAGE_WORDS, MIXED_CASE_WORDS
 
 SOURCE_DATASETS = dict(
@@ -277,12 +278,26 @@ def label_for(token: str) -> Label:
             pass
         assert len(token) <= 20
         # ...fall through...
+    if token.startswith("DID300000005https"):
+        assert token.endswith("TS200000000200000000")
+        _ = int(token[17:-20], 16)
+        return Label.NOT_BASE64
     if len(token) >= 128:
         if token.count("x") == len(token):
             return Label.NOT_BASE64
         if token.startswith("101110101010102"):
             return Label.NOT_BASE64
+        if token.startswith("573J8100L5093461D49F0C18L"):
+            return Label.NOT_BASE64
+        if token.upper() == token:
+            assert base64_probability(token) < 0.41
+            return Label.NOT_BASE64
+        if token.startswith("lk5V736I0I0V2N2F234O3J4I7"):
+            assert token[2:].upper() == token[2:]
+            return Label.NOT_BASE64
         # All eyeballed, all keysmash
+        assert (base64_probability(token) > 0.59
+                or "AAAAAAAAAAAAAAAAAA" in token)
         return Label.BASE64_ENCODED_DATA
     if token.startswith("landerForm"):
         _ = int(token[10:42], 16)
@@ -349,6 +364,9 @@ def main():
 # - "666666666666666666em" (decodes to 5-character CJK!)
 # - the one that's ~1600 "x"s
 # - 1011101010101020...300000006/TSPD/300000008TSPD (=long but not base64)
+# - "".join("1d2fe9f489591b866efe42250fb5b8e4962f39620bc2ec2762c68841d550"
+#     "c1efc0ff55d0383623817683789ee52a808067b438a4c2c49f3c9fd47f5ab99ba0"
+#     "2cZtbK192ipLnvPkJ4G9z6D7cTg616ptjDWARpGGUCwU" (=hex+tiny bit of b64)
 #
 # Possible augmentation:
 # - some MIXED_CASE_HEX are concatenated single-case hex: worth splitting?
