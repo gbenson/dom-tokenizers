@@ -213,6 +213,9 @@ FALSE_BASE64_ENCODED_UTF8 = {
 }
 
 def label_for(token: str) -> Label:
+    if token.endswith("="):
+        return Label.BASE64_ENCODED_DATA
+
     label = KNOWN_LABELS.get(token)
     if label is not None:
         return label
