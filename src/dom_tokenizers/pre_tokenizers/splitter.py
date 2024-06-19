@@ -206,6 +206,13 @@ class TextSplitter:
                         splits[cursor:cursor+1] = new_splits
                         continue
 
+                # Dump the base64ish text vec64 found.
+                if len(vec64) >= 5:
+                    assert len(curr) == len(vec64)
+                    if curr not in self._seen_tokens:
+                        print(curr, file=self._tokens_file)
+                    self._seen_tokens.add(curr)
+
             else:
                 # (curr[0] is not a base64 alphabet character...)
 
@@ -505,7 +512,7 @@ class TextSplitter:
                 raise FalseBase64Error("part of a URL")
 
             # It's not obviously part of a URL, time to pull out the big guns
-            _ = self._enter_base64(curr)  # XXX
+            splits[cursor:cursor + 1] = self._enter_base64(curr)
             if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
                 if splits[cursor] == self.base64_token:
                     debug("it's base64?")
@@ -637,11 +644,6 @@ class TextSplitter:
             # tokenizer output to avoid filling the vocabulary with
             # terminal-quotes.
             token = token.rstrip("'")
-
-            if len(token) >= 5 and token.isascii():
-                if token not in self._seen_tokens:
-                    print(token, file=self._tokens_file)
-                self._seen_tokens.add(token)
 
             if self.HEX_RE.match(token):
                 yield self.long_token
