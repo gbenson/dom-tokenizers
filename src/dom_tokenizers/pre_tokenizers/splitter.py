@@ -303,9 +303,14 @@ class TextSplitter:
         cursor_limit = cursor + 1
 
         # Ensure `curr` holds a complete sequence, minus the initial backslash
+        # or backslashes.  (We need to handle more than one at a time to deal
+        # with multiply-escaped text, which we can't otherwise handle as we're
+        # de-escaping out-of-context and so can't determine which order things
+        # should be happening in.)
+        curr = curr.lstrip("\\")
         if len(curr) > 1:
-            # Trim the initial backslash
-            curr = curr[1:]
+            # Backslash followed by nonword
+            pass
         elif cursor_limit >= len(splits):
             # Terminal backslash
             splits.pop(cursor)

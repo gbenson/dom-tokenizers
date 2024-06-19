@@ -85,6 +85,9 @@ def test_first_split_re(text, expect_splits):
      (r"hell\u006f\u020\u0077orld", ["hello", "u020world"]),  # mixd {,in}valid
      (r"hello\'\u0020world", ["hello", "world"]),
      # XXX N.B. Javascript is UTF-16 internal, so, surrogates?
+     (r"\\u0041", ["A"]),
+     (r"\\u0042\u0043", ["BC"]),
+     (r"\u0044\\u0045", ["DE"]),
 
      # Javascript hex escapes
      (r"hello\x20world", ["hello", "world"]),
@@ -163,11 +166,11 @@ def test_first_split_re(text, expect_splits):
      (r"hello,\'&#119;orld", ["hello", "world"]),
      (r"hello,\"&#119;orld", ["hello", "world"]),
 
-     (r"hello\\\'\x77orld", ["hello", "world"]),
+     (r"hello\\\'\x77orld", ["hello'world"]),
      (r"hello\\\"\x77orld", ["hello", "world"]),
-     (r"hello\\\'%77orld", ["hello", "world"]),
+     (r"hello\\\'%77orld", ["hello'world"]),
      (r"hello\\\"%77orld", ["hello", "world"]),
-     (r"hello\\\'&#119;orld", ["hello", "world"]),
+     (r"hello\\\'&#119;orld", ["hello'world"]),
      (r"hello\\\"&#119;orld", ["hello", "world"]),
 
      ("hell&#111;&apos;world", ["hello'world"]),
@@ -251,6 +254,8 @@ def test_sub_js_escape_crasher():
       ["src", "url", "fonts", "gstatic", "com", "s", "roboto", "v18",
        "[BASE64]", "woff2", "format", "woff2", "unicode",
        "range", "U", "0000", "00FF"]),
+     (r"kNEu9lE8g2RGVVvZ6clo\\u003d\x22,1,0,null",
+      ["[BASE64]", "1", "0", "null"]),
      ))
 def test_regressions(text, expect_tokens):
     """Check that things we improve stay improved.
