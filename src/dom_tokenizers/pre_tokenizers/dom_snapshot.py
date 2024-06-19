@@ -8,7 +8,7 @@ from ..internal import json
 from .compat_itertools import batched
 from .html import is_void_element
 from .pre_tokenizer import PreTokenizer
-from .splitter import TextSplitter, Flags as Split
+from .splitter import TextSplitter, Flags as Split, FoundToken
 from .token_buffer import TokenBuffer
 
 
@@ -28,7 +28,21 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
             snapshot = snapshot.get("result", snapshot)
 
         split = TokenCache(snapshot["strings"], self._splitter).get
+        try:
+            return self.__pre_tokenize_dom(buf, snapshot, split)
+        except FoundToken as e:
+            string_index, match = e.args[0]
 
+        text = snapshot["strings"][string_index]
+        token = match.group()
+
+        print(f"\x1B[{31 + int(token in text)}mFound {token}\x1B[0m")
+        with open("tokens-to-check.jsonl", "a") as fp:
+            json.dump(dict(
+                token=token, dom_snapshot=snapshot, string_index=string_index), fp)
+            print(file=fp)
+
+    def __pre_tokenize_dom(self, buf, snapshot, split):
         for document in snapshot["documents"]:
             stack = [self._SENTINEL]
             for node in _Node.each(document["nodes"]):
@@ -133,9 +147,13 @@ class TokenCache:
         if tokens is not None:
             return tokens
         text = self._strings[string_index]
-        tokens = [
-            NormalizedString(token)
-            for token in self._splitter.split(text, split_flags)
-        ]
+        try:
+            tokens = [
+                NormalizedString(token)
+                for token in self._splitter.split(text, split_flags)
+            ]
+        except FoundToken as e:
+            match = e.args[0]
+            raise FoundToken((string_index, match))
         cache[string_index] = tokens
         return tokens

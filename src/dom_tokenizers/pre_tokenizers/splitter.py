@@ -1,4 +1,3 @@
-import atexit
 import logging
 import re
 
@@ -58,6 +57,10 @@ def base64_matcher(min_encoded_len=24):
 
 
 class FalseBase64Error(RuntimeError):
+    pass
+
+
+class FoundToken(RuntimeError):
     pass
 
 
@@ -566,9 +569,7 @@ class TextSplitter:
             raise FalseBase64Error("text")
         return [self.base64_token]
 
-    _seen_tokens = set()
-    _tokens_file = open("unique-tokens", "w")
-    atexit.register(_tokens_file.close)
+    _TOKENS_TO_CHECK_RE = re.compile(r"^u00[0-9a][0-9a-f]", re.I)
 
     def _postprocess(self, tokens: Iterable[str]) -> Iterable[str]:
         for token in tokens:
@@ -584,9 +585,8 @@ class TextSplitter:
             token = token.rstrip("'")
 
             if len(token) >= 5 and token.isascii():
-                if token not in self._seen_tokens:
-                    print(token, file=self._tokens_file)
-                self._seen_tokens.add(token)
+                if (match := self._TOKENS_TO_CHECK_RE.match(token)):
+                    raise FoundToken(match)
 
             if self.HEX_RE.match(token):
                 yield self.long_token
