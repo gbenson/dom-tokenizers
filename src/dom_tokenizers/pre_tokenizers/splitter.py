@@ -164,14 +164,16 @@ class TextSplitter:
 
             curr = splits[cursor]
             if VERBOSE:  # pragma: no cover
-                if len(splits) < 32:
-                    debug(" ".join(
-                        f"""\x1B[{'48;5;15;1;31'
-                        if index == cursor
-                        else '48;5;248;30'}m{split}\x1B[0m"""
-                        for index, split in enumerate(splits)))
-                else:
-                    debug("curr: %s", repr(curr))
+                start = max(cursor - 16, 0)
+                limit = min(cursor + 17, len(splits))
+                debug(" ".join(
+                    f"""\x1B[{'48;5;15;1;31'
+                    if index + start == cursor
+                    else '48;5;248;30'}m{
+                    split
+                    if split is SPLIT or len(split) < 256
+                    else '[long]'}\x1B[0m"""
+                    for index, split in enumerate(splits[start:limit])))
 
             # Pop empty strings and whitespace
             cursor, is_changed = _pop_unless_nonempty(curr, cursor, splits)
