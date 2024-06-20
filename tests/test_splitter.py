@@ -84,7 +84,9 @@ def test_first_split_re(text, expect_splits):
      (r"hello\u9world", ["hello", "u9world"]),
      (r"hell\u006f\u020\u0077orld", ["hello", "u020world"]),  # mixd {,in}valid
      (r"hello\'\u0020world", ["hello", "world"]),
-     # XXX N.B. Javascript is UTF-16 internal, so, surrogates?
+     (r"hello\ud801\udc37world", ["hello", "world"]),  # surrogate pair
+     (r"hello\ud801world", ["hello", "world"]),  # high surrogate
+     (r"hello\udc37world", ["hello", "world"]),  # low surrogate
      (r"\\u0041", ["A"]),
      (r"\\u0042\u0043", ["BC"]),
      (r"\u0044\\u0045", ["DE"]),

@@ -1,7 +1,6 @@
 import logging
 import re
 
-from base64 import b64decode
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -13,6 +12,7 @@ import magic
 from unidecode import unidecode
 
 from ..internal import json
+from ..internal.base64 import b64symvec, b64decode
 from .base64 import base64_probability
 
 logger = logging.getLogger(__name__)
@@ -44,16 +44,6 @@ class MandatorySplit:  # pragma: no cover
 
 
 SPLIT = MandatorySplit()
-
-_B64_RE_S = r"(?:[A-Za-z0-9+/]{4}){"
-_B64_RE_E = r",}(?:[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?"
-
-
-def base64_matcher(min_encoded_len=24):
-    min_groups, extra = divmod(min_encoded_len, 4)
-    if extra:  # pragma: no cover
-        min_groups += 1
-    return re.compile(f"^{_B64_RE_S}{min_groups}{_B64_RE_E}$")
 
 
 class FalseBase64Error(RuntimeError):
@@ -88,6 +78,7 @@ class TextSplitter:
     }
     APOSTROPHISH = "".join(map(chr, sorted(_APOSTROPHISH)))
     APOSTROPHISH_RE = re.compile(rf"[{_APOSTROPHISH}]")
+    APOSTROPHES = f"'{APOSTROPHISH}"
 
     # Partially split into words, but retain the non-word characters
     # until everything's de-escaped and base64 is identified.
@@ -96,7 +87,7 @@ class TextSplitter:
     # - Apostrophes are... included for now XXX
     # - Underscores are included in "\w", so we have to handle them.
     BASE64_NONWORD = "+/="
-    FIRST_SPLIT_RE = re.compile(rf"([^\w'{APOSTROPHISH}{BASE64_NONWORD}]+)")
+    FIRST_SPLIT_RE = re.compile(rf"([^\w{APOSTROPHES}{BASE64_NONWORD}]+)")
     BASE64_NONWORD_RE = re.compile(rf"[{BASE64_NONWORD}]+")
 
     _TWOHEX = "[0-9a-fA-F]{2}"
@@ -108,24 +99,27 @@ class TextSplitter:
 
     # XXX older bits
     MAXWORDLEN = 32
-    WORD_RE = re.compile(rf"(?:\w+['{APOSTROPHISH}]?)+")
+    WORD_RE = re.compile(rf"(?:\w+[{APOSTROPHES}]?)+")
     HEX_RE = re.compile(r"^(?:0x|[0-9a-f]{2})[0-9a-f]{6,}$", re.I)
     DIGIT_RE = re.compile(r"\d")
     LONGEST_URLISH = 1024  # XXX?
     URLISH_LOOKBACK = 5
     URLISH_THRESHOLD = 2  # XXX review?
     URLISH_THINGS = {
+        "com",
         "css",
         "href",
         "http",
         "https",
+        "recaptcha",  # XXX kinda hacky
+        "roboto",     # XXX very hacky!
         "src",
         "static",
         "url",
         "www",
     }
     LONGEST_PHITEST = 85
-    BASE64_RE = base64_matcher()
+    SHORTEST_BASE64 = 24
     B64_PNG_RE = re.compile(r"iVBORw0KGg[o-r]")
     XML_HDR_RE = re.compile(r"<([a-z]{3,})\s+[a-z]+")
 
@@ -175,44 +169,75 @@ class TextSplitter:
                     else '[long]'}\x1B[0m"""
                     for index, split in enumerate(splits[start:limit])))
 
-            # Pop empty strings and whitespace
-            cursor, is_changed = _pop_unless_nonempty(curr, cursor, splits)
-            if is_changed:
+            # Step over mandatory splits
+            if curr is SPLIT:
                 if VERBOSE:  # pragma: no cover
-                    debug("it's whitespace or splits")
+                    debug("it's a split")
+                cursor += 1
                 continue
 
-            # Are we looking at URL-encoding (`%xx` escapes)?
-            if unquote_urls and curr == "%":
-                if VERBOSE:  # pragma: no cover
-                    debug("it's urlencoded")
-                cursor = self._sub_urlencoded(splits, cursor)
-                continue
+            # Are we looking at something that might be base64?
+            if (vec64 := b64symvec(curr)):
+                if (limit := len(vec64)) != len(curr):
+                    vec64 = b""  # do not process this partial match
+                    nextchar = curr[limit]
 
-            # Are we looking at Javascript escaping?
-            if unescape_js and curr[0] == "\\":
-                if VERBOSE:  # pragma: no cover
-                    debug("it's escaped")
-                cursor = self._sub_js_escape(splits, cursor)
-                continue
+                    # Avoid splitting apostrophes out of words
+                    if nextchar in self.APOSTROPHES and (
+                            match := self.WORD_RE.match(curr)):
+                        if VERBOSE:  # pragma: no cover
+                            debug("it's a word with apostrophes")
+                        word = match.group()
+                        if not word.isascii():
+                            word = unidecode(word)
+                            if not word.isascii():  # pragma: no cover
+                                logger.warning("%s: unidecode fail?", word)
+                        new_splits = [word, curr[len(word):]]
+                        splits[cursor:cursor+1] = new_splits
+                        cursor += 1
+                        continue
 
-            # Are we looking at character entities?
-            if sub_entities and curr in self.ENTITY_STARTS:
-                if VERBOSE:  # pragma: no cover
-                    debug("it's an entity")
-                cursor = self._sub_html_entity(splits, cursor)
-                continue
+                    # Split unless the next character is non-ASCII
+                    if nextchar.isascii():
+                        if VERBOSE:  # pragma: no cover
+                            debug("it's partially base64ish")
+                        new_splits = [curr[:limit], curr[limit:]]
+                        splits[cursor:cursor+1] = new_splits
+                        continue
 
-            # Split on "_" (have to do this b/c "\w" matches it)
-            new_splits = curr.split("_", maxsplit=1)
-            if len(new_splits) > 1:
-                if VERBOSE:  # pragma: no cover
-                    debug("it's stuff with underscores")
-                splits[cursor:cursor+1] = new_splits
-                continue
+            else:
+                # (curr[0] is not a base64 alphabet character...)
+
+                # Pop empty strings and whitespace
+                cursor, is_changed = _pop_unless_nonempty(curr, cursor, splits)
+                if is_changed:
+                    if VERBOSE:  # pragma: no cover
+                        debug("it's whitespace or splits")
+                    continue
+
+                # Are we looking at URL-encoding (`%xx` escapes)?
+                if unquote_urls and curr == "%":
+                    if VERBOSE:  # pragma: no cover
+                        debug("it's urlencoded")
+                    cursor = self._sub_urlencoded(splits, cursor)
+                    continue
+
+                # Are we looking at Javascript escaping?
+                if unescape_js and curr[0] == "\\":
+                    if VERBOSE:  # pragma: no cover
+                        debug("it's escaped")
+                    cursor = self._sub_js_escape(splits, cursor)
+                    continue
+
+                # Are we looking at character entities?
+                if sub_entities and curr in self.ENTITY_STARTS:
+                    if VERBOSE:  # pragma: no cover
+                        debug("it's an entity")
+                    cursor = self._sub_html_entity(splits, cursor)
+                    continue
 
             # Are we looking at some prefixed hex?
-            if (match := self.PREFIXED_HEX_RE.match(curr)):
+            if len(vec64) > 2 and (match := self.PREFIXED_HEX_RE.match(curr)):
                 if VERBOSE:  # pragma: no cover
                     debug("prefixed hex")
                 new_splits = [s for s in match.groups() if s]
@@ -221,8 +246,18 @@ class TextSplitter:
                 continue
 
             # Are we looking at something that might be base64?
-            if sniff_base64 and self.BASE64_RE.match(curr):
+            if sniff_base64 and len(vec64) >= self.SHORTEST_BASE64:
                 cursor = self._sub_base64(splits, cursor)
+                continue
+
+            # Are we looking at something with underscores?
+            # We have to split them out because the "\w" in
+            # self.WORD_RE will match them otherwise.
+            new_splits = curr.split("_", maxsplit=1)
+            if len(new_splits) > 1:
+                if VERBOSE:  # pragma: no cover
+                    debug("it's stuff with underscores")
+                splits[cursor:cursor+1] = new_splits
                 continue
 
             # Is the whole thing one word?
@@ -456,6 +491,12 @@ class TextSplitter:
     def _sub_base64(self, splits, cursor):
         curr = splits[cursor]
         try:
+            # XXX work around a test failure that's happens because vec64
+            # doesn't enforce correct padding like self.BASE64_RE did but
+            # we don't have the all new is-this-base64 checks it needs yet.
+            if (t := len(curr)) & 3 and t < self.MAXWORDLEN and curr.isalnum():
+                raise FalseBase64Error("probably just a word")
+
             # Is this part of a URL?  The last piece of domain and any number
             # of path components can blob together and look like valid base64.
             if self._is_urlish_looking_base64(splits, cursor):
@@ -531,7 +572,7 @@ class TextSplitter:
         # Lots of false-positives here, try sniffing
         if self.B64_PNG_RE.match(encoded):
             return [self.base64_token, "png"]
-        data = b64decode(encoded)
+        data = b64decode(encoded, fix_padding=True)
         try:
             text = data.decode("utf-8")
         except UnicodeDecodeError:
@@ -616,9 +657,6 @@ class TextSplitter:
 
 
 def _pop_unless_nonempty(curr, cursor, splits):
-    if curr is SPLIT:
-        return cursor + 1, True
-
     if curr:
         if not curr[0].isspace():
             return cursor, False

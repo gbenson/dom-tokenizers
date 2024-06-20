@@ -1,6 +1,6 @@
 [project]
 name = "dom-tokenizers"
-version = "0.0.17"
+version = "0.0.18"
 authors = [{ name = "Gary Benson", email = "gary@gbenson.net" }]
 description = "DOM-aware tokenization for 🤗 Hugging Face language models"
 readme = "README.md"
@@ -25,6 +25,7 @@ dependencies = [
     "python-magic",       # XXX review
     "tokenizers",
     "unidecode",          # XXX review
+    "vec64>0.0.2",
 ]
 
 [project.urls]
