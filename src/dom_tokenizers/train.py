@@ -1,3 +1,4 @@
+import logging
 import os
 import warnings
 
@@ -18,6 +19,8 @@ from .scripts.defaults import (
     DEFAULT_VOCAB_SIZE,
     SEND_BUGS_TO,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def train_tokenizer(
@@ -55,6 +58,11 @@ def train_tokenizer(
 
     def get_training_corpus():
         for row in training_dataset:
+            logger.info(
+                "source %d: %s",
+                row.get("source_index", -1),
+                row.get("displayed_url"),
+            )
             yield futz_input(json.dumps(row["dom_snapshot"]))
 
     # Try and get a dataset length, for the progress tracker.
