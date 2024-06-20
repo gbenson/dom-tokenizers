@@ -223,6 +223,19 @@ def test_sub_js_escape_crasher():
 
 @pytest.mark.parametrize(
     "text,expect_tokens",
+    (("kNEu9lE8g2RGVVvZ6clo/g\u00f6\u00f6d+m\u00f6rning/kNEu9lE8g2RGVVvZ6clo",
+      ["[BASE64]", "good", "morning", "[BASE64]"]),
+     (r"kNEu9lE8g2RGVVvZ6clo/g\u00f6\u00f6d+m\u00f6rning/kNEu9lE8g2RGVVvZ6clo",
+      ["[BASE64]", "good", "morning", "[BASE64]"]),
+     ))
+def test_nonascii_in_base64(text, expect_tokens):
+    """Ensure non-ASCII characters in obvious base64 are handled correctly.
+    """
+    assert list(TextSplitter().split(text)) == expect_tokens
+
+
+@pytest.mark.parametrize(
+    "text,expect_tokens",
     (("That\u2019s all we know.",
       ["That's", "all", "we", "know"]),
      ("Page=Login&Action=Login\';\n\t\t\treturn",

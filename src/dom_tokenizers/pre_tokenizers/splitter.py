@@ -281,7 +281,14 @@ class TextSplitter:
             if words:
                 if VERBOSE:  # pragma: no cover
                     debug("it's some words")
-                splits[cursor:cursor+1] = words + [SPLIT]
+                cursor_limit = cursor + 1
+
+                if cursor_limit < len(splits):
+                    next = splits[cursor_limit]
+                    if next and next is not SPLIT and next[0] not in r"%\&":
+                        words.append(SPLIT)
+
+                splits[cursor:cursor_limit] = words
                 continue
 
             if True:  # pragma: no cover
