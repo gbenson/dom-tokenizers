@@ -1,3 +1,5 @@
+import logging
+
 from collections import defaultdict
 from dataclasses import make_dataclass
 from xml.dom import Node
@@ -10,6 +12,8 @@ from .html import is_void_element
 from .pre_tokenizer import PreTokenizer
 from .splitter import TextSplitter, Flags as Split
 from .token_buffer import TokenBuffer
+
+logger = logging.getLogger(__name__)
 
 
 class DOMSnapshotPreTokenizer(PreTokenizer):
@@ -29,7 +33,12 @@ class DOMSnapshotPreTokenizer(PreTokenizer):
 
         split = TokenCache(snapshot["strings"], self._splitter).get
 
-        for document in snapshot["documents"]:
+        for doc_index, document in enumerate(snapshot["documents"]):
+            logger.info(
+                "doc %d: %s",
+                doc_index,
+                snapshot["strings"][document["documentURL"]])
+
             stack = [self._SENTINEL]
             for node in _Node.each(document["nodes"]):
                 while stack[-1].index != node.parent_index:
