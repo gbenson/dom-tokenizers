@@ -87,7 +87,7 @@ _KNOWN_WORDS.update((
     "sdk", "seo", "sso", "svg", "txt", "uid", "uri", "url", "utf", "www",
     "xml", "dtd", "cto", "sha",
 
-    "creds", "refetch", "ccbysa",
+    "creds", "refetch", "ccbysa", "litespeed",
 
     "aarch64", "bzip2", "ipv4", "ipv6", "oauth2", "xfree86",
 ))
