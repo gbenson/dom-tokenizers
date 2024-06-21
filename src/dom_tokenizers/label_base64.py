@@ -298,6 +298,27 @@ def label_for(token: str) -> Label:
         if token.startswith("lk5V736I0I0V2N2F234O3J4I7"):
             assert token[2:].upper() == token[2:]
             return Label.NOT_BASE64
+        for prefix in ("+", "0x"):
+            if not token.startswith(prefix):
+                continue
+            if not is_hex(token[len(prefix):]):
+                continue
+            assert token.lower() == token
+            return Label.NOT_BASE64
+        if (slash := token.rfind("/")) >= 0 and (
+                slash * 2 < len(token) and
+                len(token) - slash > 64):
+            ending = token[slash + 1:]
+            if is_hex(ending):
+                assert ending.lower() == ending
+                return Label.NOT_BASE64
+            if (p64 := base64_probability(ending)) > 0.74:
+                return Label.BASE64_ENCODED_DATA
+            assert p64 >= 0.59
+            assert ending.upper() == ending
+            return Label.NOT_BASE64  # XXX base32
+        if token.startswith("rodents+monkeys+person+infected+"):
+            return Label.NOT_BASE64
         # All eyeballed, all keysmash
         assert (base64_probability(token) > 0.59
                 or "AAAAAAAAAAAAAAAAAA" in token)
@@ -340,7 +361,7 @@ def main():
             for label, num_tokens in bins.items()):
         line = f"{num_tokens:>8}: {label.name}"
         if label is Label.UNLABELLED:
-            line = f"{line} ({num_tokens / 11931.96:.1f}%)"
+            line = f"{line} ({num_tokens / 16168.15:.1f}%)"
         print(line)
 
 # NOTES:
