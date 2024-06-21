@@ -80,12 +80,12 @@ else:
 _KNOWN_WORDS.difference_update(GARBAGE_WORDS)
 
 _KNOWN_WORDS.update((
-    "bg", "fb", "fn", "js", "px", "ui",
+    "bg", "fb", "fn", "js", "px", "qr", "ui",
 
     "amt", "btn", "cdn", "css", "faq", "gif", "hex", "ids", "img", "ios",
     "jsp", "moz", "msg", "mui", "nav", "obj", "php", "pix", "rgb", "rss",
     "sdk", "seo", "sso", "svg", "txt", "uid", "uri", "url", "utf", "www",
-    "xml",
+    "xml", "dtd", "cto", "sha",
 
     "creds", "refetch", "ccbysa",
 

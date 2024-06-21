@@ -112,4 +112,8 @@ GARBAGE_WORDS = {
     "yogav",
 
     "ebis", "aure", "pas", "blico", "bcanka", "fianc", "lim",
+
+    "ababa", "aceda",
+
+    "dgps",
 }
