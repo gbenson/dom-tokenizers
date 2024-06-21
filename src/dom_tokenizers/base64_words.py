@@ -111,9 +111,16 @@ GARBAGE_WORDS = {
     "norrl", "ognia", "ozker", "rahum", "soffa", "ujman", "ulupo",
     "yogav",
 
-    "ebis", "aure", "pas", "blico", "bcanka", "fianc", "lim",
+    "ebis", "aure", "pas", "blico", "bcanka", "fianc", "lim", "dgps",
 
-    "ababa", "aceda",
+    "ababa", "aceda", "abfde",
 
-    "dgps",
+    "aaca", "abac", "abbb", "acef", "acfa", "acfe", "afae", "affe",
+    "bafc", "bafe", "bbab", "bbcb", "bbcc", "bbcf", "bfbb", "bfbc",
+    "cbce", "cbda", "cbeb", "cbec", "ccac", "cdac", "cdba", "cddb",
+    "cebe", "ceed", "cffb", "cffd", "dabb", "dada", "dafe", "dbbc",
+    "dcac", "dcbe", "dcea", "ddad", "dfdc", "eacb", "eafe", "ebaa",
+    "ecaa", "eccb", "edeb", "eebe", "eeda", "efac", "efad", "fabb",
+    "facc", "fadc", "fbcc", "fcbb", "fcbd", "fcda", "feda", "fffc",
+    "cacc",
 }
