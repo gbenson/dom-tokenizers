@@ -115,6 +115,48 @@ def is_known_word(token, *, allow_numeric_suffix=False):
         return True
     return False
 
+def is_normally_cased(word):
+    lower = word.lower()
+    if word == lower:
+        return True
+    if word == word.upper():
+        return True
+    if word == lower.title():
+        return True
+    return False
+
+_WORD_RE = re.compile(r"(?:[A-Za-z]+'?)+")
+
+def is_delimited_known_words(token, *, cutoff=3, min_known_length=6):
+    # Enforcing a minimum known length of 6 allows us to have the
+    # low default cutoff of 3 without matching things which are a
+    # just single five letter words, which gives false positives.
+    # N.B. the next line with the <= is correct, whole word matches
+    # are handled before this check is used, which means we can say
+    # min_token_length = min_known_length + 1 since there must be
+    # at least one non-word character in there.
+    if len(token) <= min_known_length:
+        return False
+
+    known_words = [
+        word
+        for word in _WORD_RE.findall(token)
+        if (wordlen := len(word)) >= 4
+        and is_known_word(word)
+        and (wordlen > 5 or is_normally_cased(word))
+    ]
+    if not known_words:
+        return False
+    known_lengths = list(map(len, known_words))
+    if max(known_lengths) < 5:
+        return False
+    known_length = sum(known_lengths)
+    if known_length < min_known_length:
+        return False
+    known_fraction = known_length / len(token)
+
+    return max(known_lengths) * known_fraction > cutoff
+
 _CAMEL_WORD_RE = re.compile(r"""
         (?: ^[a-z]+
            | [A-Z](?:[a-z]+|[A-Z]*)
@@ -234,6 +276,8 @@ def label_for(token: str) -> Label:
 
     if is_known_word(token, allow_numeric_suffix=True):
         return Label.KNOWN_WORD
+    if is_delimited_known_words(token):
+        return Label.DELIMITED_WORDS
     if is_camelcase(token):
         return Label.CAMELCASE
 

@@ -6,6 +6,7 @@ class Label(Enum):
     UPPERCASE_HEX = auto()
     MIXED_CASE_HEX = auto()
     KNOWN_WORD = auto()
+    DELIMITED_WORDS = auto()
     CAMELCASE = auto()
     NOT_BASE64 = auto()
     BASE64_ENCODED_GIF = auto()
