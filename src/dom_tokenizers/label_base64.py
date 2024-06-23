@@ -254,6 +254,11 @@ FALSE_BASE64_ENCODED_UTF8 = {
     "666666666666666666em", # decodes to 5-character CJK!
 }
 
+_DECIMAL_PREFIXED_STUFF_RE = re.compile("^/*\d{6,}")
+_DECIMAL_SUFFIXED_STUFF_RE = re.compile("\d{6,}/*$")
+_HEX_PREFIXED_STUFF_RE = re.compile("^/*[0-9a-f]{8,}")
+_HEX_SUFFIXED_STUFF_RE = re.compile("[0-9a-f]{8,}/*$")
+
 def label_for(token: str) -> Label:
     if token.endswith("="):
         return Label.BASE64_ENCODED_DATA
@@ -283,6 +288,22 @@ def label_for(token: str) -> Label:
 
     if is_hex_token:
         return _label_for_hex(token)
+
+    n = _DECIMAL_PREFIXED_STUFF_RE.match(token)
+    if (m := _HEX_PREFIXED_STUFF_RE.match(token)):
+        if n and len(n.group()) > len(m.group()):
+            return Label.DECIMAL_PREFIXED
+        return Label.LOWERHEX_PREFIXED
+    elif n:
+        return Label.DECIMAL_PREFIXED
+
+    n = _DECIMAL_SUFFIXED_STUFF_RE.search(token)
+    if (m := _HEX_SUFFIXED_STUFF_RE.search(token)):
+        if n and len(n.group()) > len(m.group()):
+            return Label.DECIMAL_SUFFIXED
+        return Label.LOWERHEX_SUFFIXED
+    elif n:
+        return Label.DECIMAL_SUFFIXED
 
     decoded_data = _forced_b64decode(token)
     decoded_utf8 = _try_decode(decoded_data, "utf-8")
@@ -325,15 +346,11 @@ def label_for(token: str) -> Label:
             pass
         assert len(token) <= 20
         # ...fall through...
-    if token.startswith("DID300000005https"):
-        assert token.endswith("TS200000000200000000")
-        _ = int(token[17:-20], 16)
-        return Label.NOT_BASE64
+    assert not token.startswith("DID300000005https")
     if len(token) >= 128:
         if token.count("x") == len(token):
             return Label.NOT_BASE64
-        if token.startswith("101110101010102"):
-            return Label.NOT_BASE64
+        assert not token.startswith("101110101010102")
         if token.startswith("573J8100L5093461D49F0C18L"):
             return Label.NOT_BASE64
         if token.upper() == token:
@@ -353,9 +370,7 @@ def label_for(token: str) -> Label:
                 slash * 2 < len(token) and
                 len(token) - slash > 64):
             ending = token[slash + 1:]
-            if is_hex(ending):
-                assert ending.lower() == ending
-                return Label.NOT_BASE64
+            assert not is_hex(ending)
             if (p64 := base64_probability(ending)) > 0.74:
                 return Label.BASE64_ENCODED_DATA
             assert p64 >= 0.59
