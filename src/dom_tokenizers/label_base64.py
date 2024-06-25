@@ -254,10 +254,10 @@ FALSE_BASE64_ENCODED_UTF8 = {
     "666666666666666666em", # decodes to 5-character CJK!
 }
 
-_DECIMAL_PREFIXED_STUFF_RE = re.compile("^/*\d{6,}")
-_DECIMAL_SUFFIXED_STUFF_RE = re.compile("\d{6,}/*$")
-_HEX_PREFIXED_STUFF_RE = re.compile("^/*[0-9a-f]{8,}")
-_HEX_SUFFIXED_STUFF_RE = re.compile("[0-9a-f]{8,}/*$")
+_DECIMAL_PREFIXED_STUFF_RE = re.compile("^\d{6,}")
+_DECIMAL_SUFFIXED_STUFF_RE = re.compile("\d{6,}$")
+_HEX_PREFIXED_STUFF_RE = re.compile("^[0-9a-f]{8,}")
+_HEX_SUFFIXED_STUFF_RE = re.compile("[0-9a-f]{8,}$")
 
 def label_for(token: str) -> Label:
     if token.endswith("="):
@@ -271,38 +271,42 @@ def label_for(token: str) -> Label:
     if filetype is not None:
         return getattr(Label, f"BASE64_ENCODED_{filetype.name}")
 
-    is_hex_token = is_hex(token)
+    # Ignore leading and trailing punctuation when looking for
+    # decimal, hex, and known words in all their various forms.
+    cleaned_token = token.lstrip("/+").rstrip("/+=")
+
+    is_hex_token = is_hex(cleaned_token)
     if is_hex_token:
-        if token.isnumeric():
+        if cleaned_token.isnumeric():
             return Label.DECIMAL_NUMBER
-        if not token.isalpha():
-            return _label_for_hex(token)
+        if not cleaned_token.isalpha():
+            return _label_for_hex(cleaned_token)
         # ...fall through...
 
-    if is_known_word(token, allow_numeric_suffix=True):
+    if is_known_word(cleaned_token, allow_numeric_suffix=True):
         return Label.KNOWN_WORD
-    if is_delimited_known_words(token):
+    if is_delimited_known_words(cleaned_token):
         return Label.DELIMITED_WORDS
-    if is_camelcase(token):
+    if is_camelcase(cleaned_token):
         return Label.CAMELCASE
 
     if is_hex_token:
-        return _label_for_hex(token)
+        return _label_for_hex(cleaned_token)
 
-    n = _DECIMAL_PREFIXED_STUFF_RE.match(token)
-    if (m := _HEX_PREFIXED_STUFF_RE.match(token)):
-        if n and len(n.group()) > len(m.group()):
+    dm = _DECIMAL_PREFIXED_STUFF_RE.match(cleaned_token)
+    if (hm := _HEX_PREFIXED_STUFF_RE.match(cleaned_token)):
+        if dm and len(dm.group()) >= len(hm.group()):
             return Label.DECIMAL_PREFIXED
         return Label.LOWERHEX_PREFIXED
-    elif n:
+    elif dm:
         return Label.DECIMAL_PREFIXED
 
-    n = _DECIMAL_SUFFIXED_STUFF_RE.search(token)
-    if (m := _HEX_SUFFIXED_STUFF_RE.search(token)):
-        if n and len(n.group()) > len(m.group()):
+    dm = _DECIMAL_SUFFIXED_STUFF_RE.search(cleaned_token)
+    if (hm := _HEX_SUFFIXED_STUFF_RE.search(cleaned_token)):
+        if dm and len(dm.group()) >= len(hm.group()):
             return Label.DECIMAL_SUFFIXED
         return Label.LOWERHEX_SUFFIXED
-    elif n:
+    elif dm:
         return Label.DECIMAL_SUFFIXED
 
     decoded_data = _forced_b64decode(token)
