@@ -12,7 +12,7 @@ import magic
 from unidecode import unidecode
 
 from ..internal import json
-from ..internal.base64 import b64symvec, b64decode
+from ..internal.base64 import b64decode, base64_symbol_indexes
 from .base64 import base64_probability
 
 logger = logging.getLogger(__name__)
@@ -177,9 +177,9 @@ class TextSplitter:
                 continue
 
             # Are we looking at something that might be base64?
-            if (vec64 := b64symvec(curr)):
-                if (limit := len(vec64)) != len(curr):
-                    vec64 = b""  # do not process this partial match
+            if (curr64 := base64_symbol_indexes(curr)):
+                if (limit := len(curr64)) != len(curr):
+                    curr64 = b""  # do not process this partial match
                     nextchar = curr[limit]
 
                     # Avoid splitting apostrophes out of words
@@ -237,7 +237,7 @@ class TextSplitter:
                     continue
 
             # Are we looking at some prefixed hex?
-            if len(vec64) > 2 and (match := self.PREFIXED_HEX_RE.match(curr)):
+            if len(curr64) > 2 and (match := self.PREFIXED_HEX_RE.match(curr)):
                 if VERBOSE:  # pragma: no cover
                     debug("prefixed hex")
                 new_splits = [s for s in match.groups() if s]
@@ -246,7 +246,7 @@ class TextSplitter:
                 continue
 
             # Are we looking at something that might be base64?
-            if sniff_base64 and len(vec64) >= self.SHORTEST_BASE64:
+            if sniff_base64 and len(curr64) >= self.SHORTEST_BASE64:
                 cursor = self._sub_base64(splits, cursor)
                 continue
 
