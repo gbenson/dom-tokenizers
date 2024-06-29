@@ -491,16 +491,16 @@ class TextSplitter:
     def _sub_base64(self, splits, cursor):
         curr = splits[cursor]
         try:
+            # Is this part of a URL?  The last piece of domain and any number
+            # of path components can blob together and look like valid base64.
+            if self._is_urlish_looking_base64(splits, cursor):
+                raise FalseBase64Error("part of a URL")
+
             # XXX work around a test failure that's happens because vec64
             # doesn't enforce correct padding like self.BASE64_RE did but
             # we don't have the all new is-this-base64 checks it needs yet.
             if (t := len(curr)) & 3 and t < self.MAXWORDLEN and curr.isalnum():
                 raise FalseBase64Error("probably just a word")
-
-            # Is this part of a URL?  The last piece of domain and any number
-            # of path components can blob together and look like valid base64.
-            if self._is_urlish_looking_base64(splits, cursor):
-                raise FalseBase64Error("part of a URL")
 
             # It's not obviously part of a URL, time to pull out the big guns
             splits[cursor:cursor + 1] = self._enter_base64(curr)
