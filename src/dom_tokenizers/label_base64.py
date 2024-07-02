@@ -260,16 +260,16 @@ _HEX_PREFIXED_STUFF_RE = re.compile("^[0-9a-f]{8,}")
 _HEX_SUFFIXED_STUFF_RE = re.compile("[0-9a-f]{8,}$")
 
 def label_for(token: str) -> Label:
+    filetype = FileType.from_base64_encoded(token)
+    if filetype is not None:
+        return getattr(Label, f"BASE64_ENCODED_{filetype.name}")
+
     if token.endswith("="):
         return Label.BASE64_ENCODED_DATA
 
     label = KNOWN_LABELS.get(token)
     if label is not None:
         return label
-
-    filetype = FileType.from_base64_encoded(token)
-    if filetype is not None:
-        return getattr(Label, f"BASE64_ENCODED_{filetype.name}")
 
     # Ignore leading and trailing punctuation when looking for
     # decimal, hex, and known words in all their various forms.
