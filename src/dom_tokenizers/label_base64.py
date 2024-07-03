@@ -8,7 +8,7 @@ from enum import Enum, auto
 from typing import Optional
 
 from datasets import load_dataset as _load_dataset
-from vec64 import CT, base64_symbol_indexes, split as vec64_split
+from vec64 import CT, Span, base64_symbol_indexes, split as vec64_split
 
 from .base64_labels import Label, KNOWN_LABELS
 from .base64_skew import base64_probability
@@ -256,11 +256,44 @@ _DECIMAL_SUFFIXED_STUFF_RE = re.compile("\d{6,}$")
 _HEX_PREFIXED_STUFF_RE = re.compile("^[0-9a-f]{8,}")
 _HEX_SUFFIXED_STUFF_RE = re.compile("[0-9a-f]{8,}$")
 
+_FALSE_BASE64_ENCODED_ZEROS_RE = re.compile(r"/s\d+/")
+
+def is_base64_encoded_zeros(token: str, splits: list[Span]) -> bool:
+    if token[:4] in {"com/", "png/", "sam/"}:
+        return False
+
+    if (index := token.find("AAAA")) < 0:
+        return False
+
+    if index >= 3 and token[index-3:index] == "0x4":
+        return False
+
+    if splits[-1].ctype is not CT.LOWER:
+        try:
+            _ = int(token.lstrip("/"), 16)
+            return False
+        except ValueError:
+            return True
+
+    if (limit := splits[-1].start) < 3:
+        return True
+
+    if (start := token.rfind("/", 0, limit-1)) < 0:
+        return True
+
+    if _FALSE_BASE64_ENCODED_ZEROS_RE.match(token[start:limit]):
+        return False
+
+    return True
+
 def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
     symbols = base64_symbol_indexes(token)
     splits = vec64_split(symbols, maxsplit=maxsplit)
 
     if splits[-1].ctype is CT.BASE64:
+        return Label.BASE64_ENCODED_DATA
+
+    if is_base64_encoded_zeros(token, splits):
         return Label.BASE64_ENCODED_DATA
 
     return None
