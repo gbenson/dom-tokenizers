@@ -41,6 +41,8 @@ MIXED_CASE_WORDS = {
 }
 
 GARBAGE_WORDS = {
+    "f",
+
     "al", "bp", "bt", "ev", "ne", "ti", "tn",
 
     "lou",
@@ -123,4 +125,14 @@ GARBAGE_WORDS = {
     "ecaa", "eccb", "edeb", "eebe", "eeda", "efac", "efad", "fabb",
     "facc", "fadc", "fbcc", "fcbb", "fcbd", "fcda", "feda", "fffc",
     "cacc",
+
+    "wqmr", "fixt", "idro", "ducl", "hweh", "kijl", "reld", "blfd",
+    "dhcs", "lyto", "ubga", "bpom", "walm", "gidr", "idut", "waez",
+    "zgsz", "ktxc", "hfdf", "wyai", "ldwa", "nzef", "shva", "idlc",
+    "wwfk", "nahb", "ojlu", "kuin", "cyub", "inno", "kxmb", "chyz",
+    "itki", "aclf", "ldrr", "fzfv", "wjzo", "meae", "dibt", "kish",
+    "rjpb", "gbfe", "uzum", "bevk", "prml", "cibw", "kstq", "khia",
+    "mian", "cfbg", "ejhl", "inub", "kusd", "sagz", "inme", "wgol",
+    "bbsrc", "povit", "zboro", "hucul", "strac", "cccan", "sazde",
+    "kjcr", "mmle", "wthk", "fuat", "wlno", "kkrd",
 }
