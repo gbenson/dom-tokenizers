@@ -2,7 +2,7 @@ import json
 import os
 import re
 
-from base64 import b64decode, b64encode
+from base64 import b64encode
 from collections import defaultdict
 from enum import Enum, auto
 from typing import Optional
@@ -12,6 +12,8 @@ from datasets import load_dataset as _load_dataset
 from .base64_labels import Label, KNOWN_LABELS
 from .base64_skew import base64_probability
 from .base64_words import GARBAGE_WORDS, MIXED_CASE_WORDS
+from .internal.base64 import b64decode
+
 
 SOURCE_DATASETS = dict(
     unlabelled_tokens="gbenson/webui-tokens-unlabelled",
@@ -238,12 +240,6 @@ _MAGIC_BASE64 = dict(
     for magic, filetype in _MAGIC_BYTES.items()
 )
 
-def _forced_b64decode(encoded, **kwargs):
-    extra = "xA=="
-    if (n := len(encoded) % 4):
-        encoded += extra[n:]
-    return b64decode(encoded, **kwargs)
-
 def _try_decode(data, *args, **kwargs):
     try:
         return data.decode(*args, **kwargs)
@@ -309,7 +305,7 @@ def label_for(token: str) -> Label:
     elif dm:
         return Label.DECIMAL_SUFFIXED
 
-    decoded_data = _forced_b64decode(token)
+    decoded_data = b64decode(token, fix_padding=True)
     decoded_utf8 = _try_decode(decoded_data, "utf-8")
     if decoded_utf8:
         # The probability that a random sequence of N bytes will be valid
