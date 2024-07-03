@@ -8,6 +8,7 @@ from enum import Enum, auto
 from typing import Optional
 
 from datasets import load_dataset as _load_dataset
+from vec64 import CT, base64_symbol_indexes, split as vec64_split
 
 from .base64_labels import Label, KNOWN_LABELS
 from .base64_skew import base64_probability
@@ -255,10 +256,23 @@ _DECIMAL_SUFFIXED_STUFF_RE = re.compile("\d{6,}$")
 _HEX_PREFIXED_STUFF_RE = re.compile("^[0-9a-f]{8,}")
 _HEX_SUFFIXED_STUFF_RE = re.compile("[0-9a-f]{8,}$")
 
+def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
+    symbols = base64_symbol_indexes(token)
+    splits = vec64_split(symbols, maxsplit=maxsplit)
+
+    if splits[-1].ctype is CT.BASE64:
+        return Label.BASE64_ENCODED_DATA
+
+    return None
+
 def label_for(token: str) -> Label:
     filetype = FileType.from_base64_encoded(token)
     if filetype is not None:
         return getattr(Label, f"BASE64_ENCODED_{filetype.name}")
+
+    label = vec64_label_for(token)
+    if label is not None:
+        return label
 
     if token.endswith("="):
         return Label.BASE64_ENCODED_DATA
