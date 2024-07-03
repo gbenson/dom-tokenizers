@@ -323,29 +323,40 @@ def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
     # some other way.
     for span in interesting_splits(splits):
         split = token[span.start:span.limit]
+
+        is_whole_token = (
+            (len(split) == len(token))
+            or split == token.strip("+/=")
+        )
+
         match span.ctype:
             case CT.DECIMAL:
-                return Label.DECIMAL_NUMBER
+                if is_whole_token:
+                    return Label.DECIMAL_NUMBER
 
             case CT.LOWER:
                 if is_known_word(split):
                     return Label.KNOWN_WORD
-                return Label.V64_LOWER
+                if is_whole_token:
+                    return Label.V64_LOWER
 
             case CT.UPPER:
                 if is_known_word(split):
                     return Label.KNOWN_WORD
-                return Label.V64_UPPER
+                if is_whole_token:
+                    return Label.V64_UPPER
 
             case CT.LOWER_ALPHAHEX:
                 if is_known_word(split):
                     return Label.KNOWN_WORD
-                return Label.LOWERCASE_HEX
+                if is_whole_token:
+                    return Label.LOWERCASE_HEX
 
             case CT.UPPER_ALPHAHEX:
                 if is_known_word(split):
                     return Label.KNOWN_WORD
-                return Label.UPPERCASE_HEX
+                if is_whole_token:
+                    return Label.UPPERCASE_HEX
 
             case CT.PUNCT:
                 assert len(split) == len(token)
