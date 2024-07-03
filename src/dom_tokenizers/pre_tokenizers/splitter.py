@@ -10,9 +10,10 @@ from urllib.parse import unquote
 import magic
 
 from unidecode import unidecode
+from vec64 import base64_symbol_indexes
 
 from ..internal import json
-from ..internal.base64 import b64decode, base64_symbol_indexes
+from ..internal.base64 import b64decode
 from .base64 import base64_probability
 
 logger = logging.getLogger(__name__)

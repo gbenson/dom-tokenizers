@@ -25,7 +25,7 @@ dependencies = [
     "python-magic",       # XXX review
     "tokenizers",
     "unidecode",          # XXX review
-    "vec64>0.0.2",
+    "vec64>0.0.5",
 ]
 
 [project.urls]
