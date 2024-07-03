@@ -22,6 +22,8 @@ class Label(Enum):
     BASE64_ENCODED_DATA = auto()
     BASE64_ENCODED_UTF8 = auto()
     BASE64_ENCODED_JSON_SANDWICH = auto()
+    V64_UPPER = auto()
+    V64_LOWER = auto()
     UNLABELLED = auto()
 
 _KNOWN_LABELS = (

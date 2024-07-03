@@ -4,6 +4,7 @@ import re
 
 from base64 import b64encode
 from collections import defaultdict
+from collections.abc import Iterable
 from enum import Enum, auto
 from typing import Optional
 
@@ -286,6 +287,12 @@ def is_base64_encoded_zeros(token: str, splits: list[Span]) -> bool:
 
     return True
 
+def interesting_splits(all_splits: list[Span]) -> Iterable[Span]:
+    # Did everything end up in one unambiguous split?
+    # If so then that one is the sole interesting split.
+    if len(all_splits) == 1:
+        yield all_splits[0]
+
 def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
     symbols = base64_symbol_indexes(token)
     splits = vec64_split(symbols, maxsplit=maxsplit)
@@ -296,6 +303,43 @@ def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
     if is_base64_encoded_zeros(token, splits):
         return Label.BASE64_ENCODED_DATA
 
+    # XXX note that some all-one-split CT.UPPER are keysmash, probably
+    # from fragmented base64, so it's possible some CT.LOWER and *HEX
+    # are too.  Maybe look for embedded words to confirm non-keysmash,
+    # or maybe add a post-process check that tries to find tokens which
+    # might be keysmash embedded in anything we've identified as base64
+    # some other way.
+    for span in interesting_splits(splits):
+        split = token[span.start:span.limit]
+        match span.ctype:
+            case CT.DECIMAL:
+                return Label.DECIMAL_NUMBER
+
+            case CT.LOWER:
+                if is_known_word(split):
+                    return Label.KNOWN_WORD
+                return Label.V64_LOWER
+
+            case CT.UPPER:
+                if is_known_word(split):
+                    return Label.KNOWN_WORD
+                return Label.V64_UPPER
+
+            case CT.LOWER_ALPHAHEX:
+                if is_known_word(split):
+                    return Label.KNOWN_WORD
+                return Label.LOWERCASE_HEX
+
+            case CT.UPPER_ALPHAHEX:
+                if is_known_word(split):
+                    return Label.KNOWN_WORD
+                return Label.UPPERCASE_HEX
+
+            case CT.PUNCT:
+                assert len(split) == len(token)
+                return Label.NOT_BASE64
+
+        raise NotImplementedError(span.ctype)
     return None
 
 def label_for(token: str) -> Label:
