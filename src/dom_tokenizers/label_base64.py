@@ -292,6 +292,18 @@ def interesting_splits(all_splits: list[Span]) -> Iterable[Span]:
     # If so then that one is the sole interesting split.
     if len(all_splits) == 1:
         yield all_splits[0]
+        return
+
+    # Did everything minus a bit of leading/trailing punctuation
+    # end up on one unambiguous split?  If so then *that* one is
+    # the sole interesting split.
+    non_punct_splits = [
+        split
+        for split in all_splits
+        if split.ctype != CT.PUNCT
+    ]
+    if len(non_punct_splits) == 1:
+        yield non_punct_splits[0]
 
 def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
     symbols = base64_symbol_indexes(token)
