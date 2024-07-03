@@ -304,6 +304,27 @@ def interesting_splits(all_splits: list[Span]) -> Iterable[Span]:
     ]
     if len(non_punct_splits) == 1:
         yield non_punct_splits[0]
+        return
+
+    # Group splits by split location, so we have a list of candidate
+    # splits of increasing length for each inter-punctuation region
+    # of the token.
+    splits_by_start = defaultdict(list)
+    for split in non_punct_splits:
+        splits_by_start[split.start].append(split)
+    splits_by_start = list(splits_by_start.values())
+
+    while splits_by_start:
+        _, index, split = min(
+            (split.probability, index, split)
+            for index, split in enumerate(
+                    splits[-1] for splits in splits_by_start
+            )
+        )
+        yield split
+        check = splits_by_start[index].pop()
+        assert split is check
+        splits_by_start = list(filter(None, splits_by_start))
 
 def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
     symbols = base64_symbol_indexes(token)
@@ -322,6 +343,9 @@ def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
     # might be keysmash embedded in anything we've identified as base64
     # some other way.
     for span in interesting_splits(splits):
+        if span.ctype is CT.ALNUM:
+            continue  # too vague
+
         split = token[span.start:span.limit]
 
         is_whole_token = (
@@ -329,9 +353,16 @@ def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
             or split == token.strip("+/=")
         )
 
+        if not is_whole_token and span.probability > 1.5e-5:
+            continue
+
+        fraction = is_whole_token and 1 or (span.length / len(token))
+
         match span.ctype:
             case CT.DECIMAL:
                 if is_whole_token:
+                    return Label.DECIMAL_NUMBER
+                if span.length >= 6:
                     return Label.DECIMAL_NUMBER
 
             case CT.LOWER:
@@ -339,30 +370,52 @@ def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
                     return Label.KNOWN_WORD
                 if is_whole_token:
                     return Label.V64_LOWER
+                return None  # XXX review
 
             case CT.UPPER:
                 if is_known_word(split):
                     return Label.KNOWN_WORD
                 if is_whole_token:
                     return Label.V64_UPPER
+                return None  # XXX review
 
             case CT.LOWER_ALPHAHEX:
                 if is_known_word(split):
                     return Label.KNOWN_WORD
                 if is_whole_token:
                     return Label.LOWERCASE_HEX
+                return None  # XXX review
 
             case CT.UPPER_ALPHAHEX:
                 if is_known_word(split):
                     return Label.KNOWN_WORD
                 if is_whole_token:
                     return Label.UPPERCASE_HEX
+                return None  # XXX review
+
+            case CT.ALPHAHEX:
+                return None  # XXX review
+            case CT.LOWERHEX:
+                return None  # XXX review
+            case CT.UPPERHEX:
+                return None  # XXX review
+            case CT.HEX:
+                return None  # XXX review
+            case CT.ALPHA:
+                return None  # XXX review
+            case CT.LOWER_ALNUM:
+                return None  # XXX review
+            case CT.UPPER_ALNUM:
+                return None  # XXX review
 
             case CT.PUNCT:
                 assert len(split) == len(token)
                 return Label.NOT_BASE64
 
-        raise NotImplementedError(span.ctype)
+        raise NotImplementedError(
+            f"{span.ctype.name}:"
+            f" {is_whole_token and 'full' or ('%4.1f%%' % (100*fraction))}"
+            f" {span.probability} {token}")
     return None
 
 def label_for(token: str) -> Label:
