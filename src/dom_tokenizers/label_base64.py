@@ -424,7 +424,20 @@ def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
                 return Label.UPPERCASE_HEX
 
             case CT.ALPHAHEX:
-                return None  # XXX review
+                if is_known_word(split):
+                    return Label.KNOWN_WORD
+                if is_alphahex_known_word_fragment(
+                        split.lower(), token.lower()):
+                    return Label.KNOWN_WORD
+                if is_camelcase(split):
+                    return Label.CAMELCASE
+                if len(split) < 6:
+                    continue
+                if "AAAA" in split:
+                    continue
+                assert is_whole_token
+                return Label.MIXED_CASE_HEX
+
             case CT.LOWERHEX:
                 return None  # XXX review
             case CT.UPPERHEX:
