@@ -326,6 +326,25 @@ def interesting_splits(all_splits: list[Span]) -> Iterable[Span]:
         assert split is check
         splits_by_start = list(filter(None, splits_by_start))
 
+_ALPHAHEX_WORD_PART_RE = re.compile(r"[a-f]{5,}")
+_ALPHAHEX_WORDS_BY_PART = defaultdict(set)
+for word in _KNOWN_WORDS:
+    match = _ALPHAHEX_WORD_PART_RE.search(word)
+    if not match:
+        continue
+    part = match.group()
+    if part == word:
+        continue
+    _ALPHAHEX_WORDS_BY_PART[part].add(word)
+del word, match, part
+
+def is_alphahex_known_word_fragment(needle, haystack) -> bool:
+    needles = _ALPHAHEX_WORDS_BY_PART.get(needle, ())
+    for needle in needles:
+        if needle in haystack:
+            return True
+    return False
+
 def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
     symbols = base64_symbol_indexes(token)
     splits = vec64_split(symbols, maxsplit=maxsplit)
@@ -384,14 +403,25 @@ def vec64_label_for(token: str, *, maxsplit: int = 32) -> Optional[Label]:
                     return Label.KNOWN_WORD
                 if is_whole_token:
                     return Label.LOWERCASE_HEX
-                return None  # XXX review
+                if is_alphahex_known_word_fragment(split, token):
+                    return Label.KNOWN_WORD
+                if len(split) < 6:
+                    continue
+                return Label.LOWERCASE_HEX
 
             case CT.UPPER_ALPHAHEX:
                 if is_known_word(split):
                     return Label.KNOWN_WORD
                 if is_whole_token:
                     return Label.UPPERCASE_HEX
-                return None  # XXX review
+                if is_alphahex_known_word_fragment(
+                        split.lower(), token.lower()):
+                    return Label.KNOWN_WORD
+                if len(split) < 6:
+                    continue
+                if "AAAA" in split:
+                    continue
+                return Label.UPPERCASE_HEX
 
             case CT.ALPHAHEX:
                 return None  # XXX review
