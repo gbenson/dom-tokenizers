@@ -96,28 +96,39 @@ _KNOWN_WORDS.update((
     "aarch64", "bzip2", "ipv4", "ipv6", "oauth2", "xfree86",
 ))
 
-def is_known_word(token, *, allow_numeric_suffix=False):
+def is_known_word(token):
+    return token.lower() in _KNOWN_WORDS
+
+def label_for_number_or_word(token):
     candidate = token.lower()
     if candidate in _KNOWN_WORDS:
-        return True
-    if not allow_numeric_suffix:
-        return False
+        return Label.KNOWN_WORD
     candidate = candidate.rstrip("0123456789")
+    wordlen = len(candidate)
+    numlen = len(token) - wordlen
+    if numlen < 6:
+        NOT_KNOWN_WORD = None
+    elif wordlen < numlen:
+        return Label.DECIMAL_NUMBER
+    else:
+        NOT_KNOWN_WORD = Label.DECIMAL_NUMBER
+    cased_candidate = token[:wordlen]
     if candidate not in _KNOWN_WORDS:
-        return False
-    cased_candidate = token[:len(candidate)]
+        return NOT_KNOWN_WORD
+    if not numlen:
+        return Label.KNOWN_WORD
     # Be selective about case when we're comparing deindexed.
     if cased_candidate in MIXED_CASE_WORDS:
-        return True
+        return Label.KNOWN_WORD
     if cased_candidate.isupper() or cased_candidate.islower():
-        return True
+        return Label.KNOWN_WORD
     if cased_candidate == candidate.title():
-        return True
+        return Label.KNOWN_WORD
     if cased_candidate[-1] == "v" and (
             cased_candidate[:-1].isupper() and
             int(token[len(candidate):]) in range(1, 11)):
-        return True
-    return False
+        return Label.KNOWN_WORD
+    return NOT_KNOWN_WORD
 
 def is_normally_cased(word):
     lower = word.lower()
@@ -489,8 +500,9 @@ def label_for(token: str) -> Label:
             return _label_for_hex(cleaned_token)
         # ...fall through...
 
-    if is_known_word(cleaned_token, allow_numeric_suffix=True):
-        return Label.KNOWN_WORD
+    label = label_for_number_or_word(cleaned_token)
+    if label:
+        return label
     if is_delimited_known_words(cleaned_token):
         return Label.DELIMITED_WORDS
     if is_camelcase(cleaned_token):
@@ -547,7 +559,7 @@ def label_for(token: str) -> Label:
             # to be a fair few where token is multiple concatenated words
             # below that threshold so that's really the limit I think.
             return Label.BASE64_ENCODED_UTF8
-        if is_known_word(decoded_utf8, allow_numeric_suffix=True):
+        if label_for_number_or_word(decoded_utf8):
             return Label.BASE64_ENCODED_UTF8
         try:
             _ = json.loads(decoded_utf8)
