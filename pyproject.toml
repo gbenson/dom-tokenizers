@@ -57,6 +57,7 @@ diff-tokenizer = "dom_tokenizers.scripts.diff:main"
 tokenizer-diff = "dom_tokenizers.scripts.diff:main"
 profile-tokenizer = "dom_tokenizers.scripts.profile:main"
 dump-breaking-inputs = "dom_tokenizers.scripts.dump_breaking_inputs:main"
+refine-webui-tokens = "dom_tokenizers.refine_webui_tokens:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]
