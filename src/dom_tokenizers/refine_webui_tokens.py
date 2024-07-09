@@ -1,10 +1,13 @@
 import os
 import pickle
 import re
+import time
 
-from collections import defaultdict
+from collections import defaultdict, Counter
+from itertools import chain, pairwise
 
 from datasets import load_dataset
+from vec64 import base64_symbol_indexes as vectorize
 
 SOURCE_DATASET = "gbenson/webui-tokens-unlabelled"
 
@@ -76,11 +79,19 @@ def winnow(inputs, limit=1):
     for text in inputs:
         yield text
 
-
 def main():
     inputs = set()
     for text in load_all_texts():
         inputs.update(text.split("'"))
     print("Got", len(inputs), "unique inputs")
-    inputs = set(winnow(sorted(inputs)))  # XXX sort for dev consistence
+    inputs = set(winnow(inputs))
     print("Got", len(inputs), "winnowed inputs")
+    start = time.time()
+    hist = Counter(chain.from_iterable(
+        ((b << 6) | a for a, b in pairwise(v))
+        for v in map(vectorize, inputs)))
+    elapsed = time.time() - start
+    print("Counting", hist.total(), "pairs took", elapsed, "seconds")
+    for pair, count in sorted(hist.items()):
+        print(f"{pair:4} {count}")
+
